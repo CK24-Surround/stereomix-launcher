@@ -22,6 +22,8 @@
       <Resource Include="resources\GradientBackground.png" />
       <None Remove="resources\Surround.png" />
       <Resource Include="resources\Surround.png" />
+      <None Remove="resources\Logo\X.png" />
+      <Resource Include="resources\Logo\X.png" />
     </ItemGroup>
 
 </Project>
