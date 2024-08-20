@@ -30,7 +30,7 @@ public partial class MainWindow : Window
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
     
-    private DispatcherTimer _eventTimer;
+    private DispatcherTimer _eventTimer = new();
     private readonly List<BitmapImage> _bannerImages = new();
     private readonly List<string> _bannerUrls = new();
     private int _currentBannerIndex;
@@ -317,6 +317,7 @@ public partial class MainWindow : Window
         SetDownloadVisibility(Visibility.Visible);
 
         var assetUrl = await GetDownloadUrl();
+        MessageBox.Show(assetUrl);
         if (!string.IsNullOrEmpty(assetUrl))
         {
             await DownloadAndExtractZip(assetUrl);
@@ -359,25 +360,35 @@ public partial class MainWindow : Window
     
     private async Task<string?> GetDownloadUrl()
     {
-        using var client = CreateHttpClient();
-        try
+        var taskResult = await GetValueFromUrl(DownloadUrl, "assets");
+        if (taskResult == null)
         {
-            var response = await client.GetFromJsonAsync<JsonDocument>(DownloadUrl);
-            var assets = response?.RootElement.GetProperty("assets");
-            if (assets.HasValue)
-            {
-                foreach (var asset in assets.Value.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith(".zip") == true))
-                {
-                    SaveJsonToFile(response?.RootElement.ToString(), VersionPath);
-                    return asset.GetProperty("browser_download_url").GetString();
-                }
-            }
+            return string.Empty;
         }
-        catch (Exception ex)
+
+        var assets = JsonSerializer.Deserialize<JsonDocument>(taskResult);
+        if (assets == null)
         {
-            ShowError(ex.Message);
+            return string.Empty;
         }
+
+        foreach (var asset in assets.RootElement.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith(".zip") == true))
+        {
+            return asset.GetProperty("browser_download_url").GetString();
+        }
+
         return string.Empty;
+    }
+    
+    private async Task SaveVersion()
+    {
+        await GetValueFromUrl(DownloadUrl).ContinueWith(task =>
+        {
+            if (task.Result != null)
+            {
+                SaveJsonToFile(task.Result, VersionPath);
+            }
+        });
     }
 
     private async Task<string?> GetValueFromUrl(string url, string propertyName = "")
@@ -420,6 +431,8 @@ public partial class MainWindow : Window
 
                 await SaveToFile(response, tempZipPath);
                 ExtractZip(tempZipPath);
+                
+                await SaveVersion();
 
                 Dispatcher.Invoke(() =>
                 {
