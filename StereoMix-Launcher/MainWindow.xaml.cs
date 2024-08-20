@@ -127,6 +127,8 @@ public partial class MainWindow : Window
         _eventTimer.Tick += OnEventTimerTick;
         _eventTimer.Start();
         
+        EventBanner.Click += (_, _) => OpenUrl(_bannerUrls[_currentBannerIndex]);
+        
         DisplayEvents(json);
     }
     
@@ -193,7 +195,6 @@ public partial class MainWindow : Window
     {
         var bannerImage = _bannerImages[_currentBannerIndex];
         AnimateBannerChange(bannerImage);
-        EventBanner.Click += (_, _) => OpenUrl(_bannerUrls[_currentBannerIndex]);
     }
     
     private void AnimateBannerChange(BitmapImage newImage)
@@ -585,7 +586,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (url == null)
+            if (string.IsNullOrEmpty(url))
             {
                 return;
             }
