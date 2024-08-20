@@ -9,7 +9,8 @@
         Icon="resources/Surround.ico">
 
     <Window.Resources>
-        <Style x:Key="ButtonStyle" TargetType="Button">
+        <!-- 버튼 스타일 -->
+        <Style x:Key="CommonButtonStyle" TargetType="Button">
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
@@ -22,10 +23,53 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#66000000"/> <!-- 투명도 40% 적용된 검정색 -->
+                                <Setter TargetName="border" Property="Background" Value="#66000000"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#99000000"/> <!-- 투명도 60% 적용된 검정색 -->
+                                <Setter TargetName="border" Property="Background" Value="#99000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 공통된 이미지 스타일 -->
+        <Style x:Key="CommonImageStyle" TargetType="Image">
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Width" Value="35"/>
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+        </Style>
+
+        <!-- 공통된 Border 스타일 -->
+        <Style x:Key="CommonBorderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+
+        <!-- 공통된 텍스트 스타일 -->
+        <Style x:Key="CommonTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Margin" Value="14,0,10,0"/>
+        </Style>
+
+        <!-- 링크 버튼 스타일 -->
+        <Style x:Key="LinkButtonStyle" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border HorizontalAlignment="Left" Width="325" Background="{TemplateBinding Background}">
+                            <TextBlock x:Name="textBlock" Style="{StaticResource CommonTextBlockStyle}" Text="{TemplateBinding Content}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="textBlock" Property="Foreground" Value="#ffdb29"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -36,6 +80,7 @@
 
     <Border Background="Black" CornerRadius="12">
         <Grid>
+            <!-- 배경 이미지 -->
             <Border Margin="90,0,0,0" Height="700" Width="1110" CornerRadius="0,12,12,0">
                 <StackPanel VerticalAlignment="Center">
                     <Image Source="resources/Background.png">
@@ -45,45 +90,45 @@
                     </Image>
                 </StackPanel>
             </Border>
-            
+
             <Border Margin="90,0,0,0" Height="700" Width="1110" CornerRadius="0,12,12,0">
                 <StackPanel VerticalAlignment="Center">
-                    <Image>
-                        <Image.Source>resources/GradientBackground.png</Image.Source>
+                    <Image Source="resources/GradientBackground.png">
                         <Image.Clip>
                             <RectangleGeometry Rect="0,0,1110,700" RadiusX="12" RadiusY="12"/>
                         </Image.Clip>
                     </Image>
                 </StackPanel>
             </Border>
-            
-            <Border Margin="120,20,0,0" Width="180" HorizontalAlignment="Left">
+
+            <!-- 로고 이미지 -->
+            <Border Margin="120,20,0,0" Width="180" Style="{StaticResource CommonBorderStyle}">
                 <StackPanel>
                     <Image Source="resources/StereoMix.png"/>
                 </StackPanel>
             </Border>
-            
-            <Border Height="700" Width="100" HorizontalAlignment="Left" CornerRadius="12,0,0,12">
-                <Border.Background>#232323</Border.Background>
+
+            <!-- 왼쪽 사이드 바 -->
+            <Border Height="700" Width="100" CornerRadius="12,0,0,12" HorizontalAlignment="Left" Background="#232323">
                 <StackPanel>
                     <Image Source="resources/Surround.png" VerticalAlignment="Center" Width="80" Margin="0,10,0,0"/>
                 </StackPanel>
             </Border>
-            
-            <!-- SNS -->
+
+            <!-- SNS 버튼들 -->
             <StackPanel HorizontalAlignment="Right" Width="70" Height="450" Margin="0,0,0,120">
                 <Border Padding="0,0,0,5">
-                    <Button Style="{StaticResource ButtonStyle}" VerticalAlignment="Center" Background="Transparent" Height="55" Width="55" Click="SNS_X_Button_Click">
+                    <Button Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55" Click="SNS_X_Button_Click">
                         <Image Width="30" Source="resources/Logo/X.png"/>
                     </Button>
                 </Border>
                 <Border Padding="0,0,0,5">
-                    <Button Style="{StaticResource ButtonStyle}" VerticalAlignment="Center" Background="Transparent" Height="55" Width="55" Click="SNS_Discord_Button_Click">
+                    <Button Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55" Click="SNS_Discord_Button_Click">
                         <Image Width="35" Source="resources/Logo/Discord.png"/>
                     </Button>
                 </Border>
             </StackPanel>
-            
+
             <!-- 게임 시작 버튼 -->
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
                 <Border CornerRadius="12" Width="180" Height="15" Margin="0,0,50,4">
@@ -96,7 +141,8 @@
                     <Button x:Name="StartButton" Content="게임 시작" FontSize="20" Background="#ffdb29" Click="StartButton_Click"/>
                 </Border>
             </StackPanel>
-            
+
+            <!-- 링크 버튼들 -->
             <StackPanel Margin="155,0,0,40" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -104,14 +150,25 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0">
-                        <Border Background="#99000000" Width="333" Height="150" CornerRadius="20" HorizontalAlignment="Left"></Border>
+                        <Border Background="#99000000" Width="333" Height="150" CornerRadius="20">
+                            <Grid Margin="0,52,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="0" Content="Link #1"/>
+                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="1" Content="Link #2"/>
+                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="2" Content="Link #3"/>
+                            </Grid>
+                        </Border>
                     </Border>
                     <Border Grid.Column="1">
-                        <Image Opacity="0.8" Width="35" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Source="resources/GRAC/GRAC_All.png"></Image>
+                        <Image Style="{StaticResource CommonImageStyle}" Source="resources/GRAC/GRAC_All.png"/>
                     </Border>
                 </Grid>
             </StackPanel>
-            
+
             <!-- UI 내용 -->
             <StackPanel Margin="155,0,0,140" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <Grid>
@@ -119,7 +176,7 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Width="333" HorizontalAlignment="Left" BorderBrush="White" BorderThickness="3" CornerRadius="19">
+                    <Border Grid.Column="0" Width="333" BorderBrush="White" BorderThickness="3" CornerRadius="19">
                         <Image Width="333" Height="210">
                             <Image.Source>resources/Background.png</Image.Source>
                             <Image.Clip>
@@ -136,11 +193,11 @@
                 <DockPanel LastChildFill="False">
                     <Border Width="30" Height="30" CornerRadius="12" HorizontalAlignment="Right" Margin="0, 2, 6, 0" DockPanel.Dock="Right">
                         <Button Content="X" Background="Transparent" FontSize="20" FontWeight="Bold" Foreground="White"
-                                Style="{StaticResource ButtonStyle}" Click="CloseButton_Click"/>
+                                Style="{StaticResource CommonButtonStyle}" Click="CloseButton_Click"/>
                     </Border>
                     <Border Width="30" Height="30" CornerRadius="12" HorizontalAlignment="Right" Margin="0, 2, 6, 0" DockPanel.Dock="Right">
                         <Button Content="-" Background="Transparent" FontSize="20" FontWeight="Bold" Foreground="White"
-                                Style="{StaticResource ButtonStyle}" Click="MinimizeButton_Click"/>
+                                Style="{StaticResource CommonButtonStyle}" Click="MinimizeButton_Click"/>
                     </Border>
                 </DockPanel>
             </Border>
