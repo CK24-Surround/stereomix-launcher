@@ -50,6 +50,7 @@ public partial class MainWindow : Window
 #endif
         if (string.IsNullOrEmpty(events))
         {
+            ShowError("Fail to get events.json");
             return;
         }
 
@@ -86,26 +87,36 @@ public partial class MainWindow : Window
             }
 
             var title = element.GetProperty("Text").GetString();
+            var date = element.GetProperty("Date");
+            var formattedDate = $"{date.GetProperty("Month").GetInt32()}/{date.GetProperty("Day").GetInt32()}";
             var action = element.GetProperty("Action").GetString();
             var url = element.GetProperty("Url").GetString();
 
             if (action == "OpenUrl")
             {
-                CreateEventButton(title, url, index);
+                CreateEventButton(title, formattedDate, url, index);
             }
         }
     }
 
-    private void CreateEventButton(string? title, string? url, int index)
+    private void CreateEventButton(string? title, string? date, string? url, int index)
     {
-        var button = new Button
+        var buttonLink = new Button
         {
             Style = (Style)FindResource("LinkButtonStyle"),
             Content = title
         };
-        Grid.SetRow(button, index);
-        button.Click += (_, _) => OpenUrl(url);
-        EventLinkGrid.Children.Add(button);
+        Grid.SetRow(buttonLink, index);
+        buttonLink.Click += (_, _) => OpenUrl(url);
+        EventLinkGrid.Children.Add(buttonLink);
+        
+        var buttonDate = new Button
+        {
+            Style = (Style)FindResource("BaseLinkButtonStyle"),
+            Content = date
+        };
+        Grid.SetRow(buttonDate, index);
+        EventLinkDateGrid.Children.Add(buttonDate);
     }
 
     private async void CheckGameInstallation()

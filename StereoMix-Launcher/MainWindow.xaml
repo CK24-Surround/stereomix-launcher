@@ -56,11 +56,24 @@
             <Setter Property="Margin" Value="14,0,10,0"/>
         </Style>
 
-        <!-- 링크 버튼 스타일 -->
-        <Style x:Key="LinkButtonStyle" TargetType="Button">
+        <!-- 기본 링크 버튼 스타일 -->
+        <Style x:Key="BaseLinkButtonStyle" TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border HorizontalAlignment="Left" Width="325" Background="{TemplateBinding Background}">
+                            <TextBlock x:Name="textBlock" Style="{StaticResource CommonTextBlockStyle}" Text="{TemplateBinding Content}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 링크 버튼 스타일 -->
+        <Style x:Key="LinkButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseLinkButtonStyle}">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -151,12 +164,25 @@
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0">
                         <Border Background="#99000000" Width="333" Height="150" CornerRadius="20">
-                            <Grid x:Name="EventLinkGrid" Margin="0,52,0,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="265"/>
+                                    <ColumnDefinition Width="60"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" x:Name="EventLinkGrid" Margin="0,52,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                </Grid>
+                                <Grid Grid.Column="1" x:Name="EventLinkDateGrid" HorizontalAlignment="Right" Margin="0,52,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                </Grid>
                             </Grid>
                         </Border>
                     </Border>
