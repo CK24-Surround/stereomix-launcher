@@ -93,6 +93,11 @@ public partial class MainWindow : Window
                     }
                 }
 
+                if (Directory.Exists(extractPath))
+                {
+                    Directory.Delete(extractPath, true);
+                }
+
                 ZipFile.ExtractToDirectory(tempZipPath, extractPath);
 
                 Dispatcher.Invoke(() =>
