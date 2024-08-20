@@ -31,6 +31,8 @@
       <Resource Include="resources\Surround.ico" />
       <None Remove="resources\GRAC\GRAC_All.png" />
       <Resource Include="resources\GRAC\GRAC_All.png" />
+      <None Remove="resources\ImageLoadFailed.png" />
+      <Resource Include="resources\ImageLoadFailed.png" />
     </ItemGroup>
 
 </Project>

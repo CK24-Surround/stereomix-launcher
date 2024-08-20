@@ -23,8 +23,9 @@ public partial class MainWindow : Window
     private const string DownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
     private const string EventsUrl = "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
 
-    private const string LatestBackgroundImage = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
-    private const string LatestGradientBackgroundImage = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/GradientBackground.png?raw=true";
+    private const string BaseRawUrl = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
+    private const string RawBackgroundImage = $"{BaseRawUrl}/resources/Background.png?raw=true";
+    private const string RawGradientBackgroundImage = $"{BaseRawUrl}/resources/GradientBackground.png?raw=true";
     
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
@@ -37,13 +38,13 @@ public partial class MainWindow : Window
         BindSnsButtons();
         CheckGameEvents();
         CheckGameInstallation();
-        FetchLatestBackgroundImage();
+        FetchBackgroundImage();
     }
 
-    private async void FetchLatestBackgroundImage()
+    private async void FetchBackgroundImage()
     {
-        var backgroundImageUri = new Uri(LatestBackgroundImage);
-        var gradientBackgroundImageUri = new Uri(LatestGradientBackgroundImage);
+        var backgroundImageUri = new Uri(RawBackgroundImage);
+        var gradientBackgroundImageUri = new Uri(RawGradientBackgroundImage);
         
         try
         {
@@ -131,9 +132,28 @@ public partial class MainWindow : Window
 
     private void DisplayEvents(JsonDocument json)
     {
+        foreach (var (element, index) in json.RootElement.GetProperty("Images").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
+        {
+            if (index + 1 > 1)
+            {
+                break;
+            }
+            
+            var source = element.GetProperty("Source").GetString();
+            var date = element.GetProperty("Date");
+            var formattedDate = $"{date.GetProperty("Month").GetInt32()}/{date.GetProperty("Day").GetInt32()}";
+            var action = element.GetProperty("Action").GetString();
+            var url = element.GetProperty("Url").GetString();
+            
+            if (action == "OpenUrl")
+            {
+                AddEventBanner(source, formattedDate, url, index);
+            }
+        }
+
         foreach (var (element, index) in json.RootElement.GetProperty("Links").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
         {
-            if (index > 2)
+            if (index + 1 > 3)
             {
                 break;
             }
@@ -150,6 +170,25 @@ public partial class MainWindow : Window
             }
         }
     }
+    
+    private async void AddEventBanner(string? source, string? date, string? url, int index)
+    {
+        EventBanner.Click += (_, _) => OpenUrl(url);
+        try
+        {
+            if (source == null)
+            {
+                EventBannerImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+                return;
+            }
+            var bannerImage = await DownloadImageAsync(new Uri(source));
+            EventBannerImage.Source = bannerImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+        }
+        catch
+        {
+            EventBannerImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+        }
+    }
 
     private void CreateEventButton(string? title, string? date, string? url, int index)
     {
@@ -160,7 +199,7 @@ public partial class MainWindow : Window
         };
         Grid.SetRow(buttonLink, index);
         buttonLink.Click += (_, _) => OpenUrl(url);
-        EventLinkGrid.Children.Add(buttonLink);
+        EventLink.Children.Add(buttonLink);
         
         var buttonDate = new Button
         {
@@ -168,7 +207,7 @@ public partial class MainWindow : Window
             Content = date
         };
         Grid.SetRow(buttonDate, index);
-        EventLinkDateGrid.Children.Add(buttonDate);
+        EventLinkDate.Children.Add(buttonDate);
     }
 
     private async void CheckGameInstallation()

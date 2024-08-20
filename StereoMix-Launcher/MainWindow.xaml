@@ -33,6 +33,31 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        <Style x:Key="NoStyleButtonStyle" TargetType="Button">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="12">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="Transparent"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <!-- 공통된 이미지 스타일 -->
         <Style x:Key="CommonImageStyle" TargetType="Image">
@@ -169,14 +194,14 @@
                                     <ColumnDefinition Width="265"/>
                                     <ColumnDefinition Width="60"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" x:Name="EventLinkGrid" Margin="0,52,0,0">
+                                <Grid Grid.Column="0" x:Name="EventLink" Margin="0,52,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                 </Grid>
-                                <Grid Grid.Column="1" x:Name="EventLinkDateGrid" HorizontalAlignment="Right" Margin="0,52,0,0">
+                                <Grid Grid.Column="1" x:Name="EventLinkDate" HorizontalAlignment="Right" Margin="0,52,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
@@ -200,12 +225,13 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0" Width="333" BorderBrush="White" BorderThickness="3" CornerRadius="19">
-                        <Image Width="333" Height="210">
-                            <Image.Source>resources/Background.png</Image.Source>
-                            <Image.Clip>
-                                <RectangleGeometry Rect="0,0,328,210" RadiusX="19" RadiusY="19"/>
-                            </Image.Clip>
-                        </Image>
+                        <Button x:Name="EventBanner" Style="{StaticResource NoStyleButtonStyle}">
+                            <Image x:Name="EventBannerImage" Width="333" Height="210" Source="resources/Background.png">
+                                <Image.Clip>
+                                    <RectangleGeometry Rect="0,0,328,210" RadiusX="19" RadiusY="19"/>
+                                </Image.Clip>
+                            </Image>
+                        </Button>
                     </Border>
                 </Grid>
             </StackPanel>
