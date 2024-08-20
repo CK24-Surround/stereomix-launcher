@@ -151,15 +151,12 @@
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0">
                         <Border Background="#99000000" Width="333" Height="150" CornerRadius="20">
-                            <Grid Margin="0,52,0,0">
+                            <Grid x:Name="EventLinkGrid" Margin="0,52,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Button x:Name="LinkButton1" Style="{StaticResource LinkButtonStyle}" Grid.Row="0" Content=""/>
-                                <Button x:Name="LinkButton2" Style="{StaticResource LinkButtonStyle}" Grid.Row="1" Content=""/>
-                                <Button x:Name="LinkButton3" Style="{StaticResource LinkButtonStyle}" Grid.Row="2" Content=""/>
                             </Grid>
                         </Border>
                     </Border>

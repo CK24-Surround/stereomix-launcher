@@ -2,8 +2,9 @@
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Animation;
+using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Media.Animation;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -17,7 +18,9 @@ public partial class MainWindow : Window
     private const string ExtractPath = "./StereoMix";
     private const string GamePath = $"{ExtractPath}/StereoMix.exe";
     private const string VersionPath = "./Version.json";
+    
     private const string DownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
+    private const string EventsUrl = "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
     
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
@@ -38,9 +41,71 @@ public partial class MainWindow : Window
         DiscordButton.Click += (_, _) => OpenUrl("https://discord.gg/bPCr4sy7QR");
     }
 
-    private void CheckGameEvents()
+    private async void CheckGameEvents()
     {
-        LinkButton1.Click += (_, _) => OpenUrl("https://naver.com");
+#if DEBUG
+        var events = await LoadEventsFromFile("../../../events/events.json");
+#else
+        var events = await GetValueFromUrl(EventsUrl);
+#endif
+        if (string.IsNullOrEmpty(events))
+        {
+            return;
+        }
+
+        var json = JsonSerializer.Deserialize<JsonDocument>(events);
+        if (json == null)
+        {
+            ShowError("Fail to deserialize events.json");
+            return;
+        }
+
+        DisplayEvents(json);
+    }
+
+    private async Task<string> LoadEventsFromFile(string filePath)
+    {
+        try
+        {
+            return await File.ReadAllTextAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+            return string.Empty;
+        }
+    }
+
+    private void DisplayEvents(JsonDocument json)
+    {
+        foreach (var (element, index) in json.RootElement.GetProperty("Links").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
+        {
+            if (index > 2)
+            {
+                break;
+            }
+
+            var title = element.GetProperty("Text").GetString();
+            var action = element.GetProperty("Action").GetString();
+            var url = element.GetProperty("Url").GetString();
+
+            if (action == "OpenUrl")
+            {
+                CreateEventButton(title, url, index);
+            }
+        }
+    }
+
+    private void CreateEventButton(string? title, string? url, int index)
+    {
+        var button = new Button
+        {
+            Style = (Style)FindResource("LinkButtonStyle"),
+            Content = title
+        };
+        Grid.SetRow(button, index);
+        button.Click += (_, _) => OpenUrl(url);
+        EventLinkGrid.Children.Add(button);
     }
 
     private async void CheckGameInstallation()
@@ -96,7 +161,7 @@ public partial class MainWindow : Window
         }
         catch (Win32Exception error)
         {
-            MessageBox.Show(error.Message);
+            ShowError(error.Message);
         }
     }
 
@@ -104,14 +169,14 @@ public partial class MainWindow : Window
     {
         SetDownloadVisibility(Visibility.Visible);
 
-        var assetUrl = await GetDownloadUrlFromGitHub();
+        var assetUrl = await GetDownloadUrl();
         if (!string.IsNullOrEmpty(assetUrl))
         {
             await DownloadAndExtractZip(assetUrl);
         }
         else
         {
-            ShowError("다운로드 URL을 가져오지 못했습니다.");
+            ShowError("Fail to fetch Download Url.");
         }
     }
 
@@ -130,7 +195,7 @@ public partial class MainWindow : Window
 
     private async Task<string?> GetLatestTagFromGitHub()
     {
-        return await GetValueFromGitHub("tag_name");
+        return await GetValueFromUrl(DownloadUrl, "tag_name");
     }
 
     private void SaveJsonToFile(string? jsonContent, string filePath)
@@ -141,11 +206,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"파일 저장 중 오류 발생: {ex.Message}");
+            ShowError(ex.Message);
         }
     }
     
-    private async Task<string?> GetDownloadUrlFromGitHub()
+    private async Task<string?> GetDownloadUrl()
     {
         using var client = CreateHttpClient();
         try
@@ -163,22 +228,26 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError($"오류 발생: {ex.Message}");
+            ShowError(ex.Message);
         }
         return string.Empty;
     }
 
-    private async Task<string?> GetValueFromGitHub(string propertyName)
+    private async Task<string?> GetValueFromUrl(string url, string propertyName = "")
     {
         using var client = CreateHttpClient();
         try
         {
-            var response = await client.GetFromJsonAsync<JsonDocument>(DownloadUrl);
+            var response = await client.GetFromJsonAsync<JsonDocument>(url);
+            if (string.IsNullOrEmpty(propertyName))
+            {
+                return response?.RootElement.ToString();
+            }
             return response?.RootElement.GetProperty(propertyName).ToString();
         }
         catch (Exception ex)
         {
-            ShowError($"오류 발생: {ex.Message}");
+            ShowError(ex.Message);
         }
         return string.Empty;
     }
@@ -216,7 +285,7 @@ public partial class MainWindow : Window
             {
                 Dispatcher.Invoke(() =>
                 {
-                    ShowError($"오류 발생: {ex.Message}");
+                    ShowError(ex.Message);
                     SetDownloadVisibility(Visibility.Hidden);
                     StartButton.IsEnabled = true;
                 });
@@ -286,7 +355,7 @@ public partial class MainWindow : Window
 
     private void ShowError(string message)
     {
-        MessageBox.Show(message);
+        MessageBox.Show($"Error: {message}");
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -352,10 +421,14 @@ public partial class MainWindow : Window
         storyboard.Begin();
     }
 
-    private void OpenUrl(string url)
+    private void OpenUrl(string? url)
     {
         try
         {
+            if (url == null)
+            {
+                return;
+            }
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Win32Exception error)
