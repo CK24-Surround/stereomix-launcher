@@ -1,0 +1,36 @@
+﻿{
+    "Images": {
+        "Events": [{
+            "Source": "",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        }]
+    },
+    "Links": {
+        "Events": [{
+            "Text": "이벤트 텍스트 #1",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        },
+        {
+            "Text": "이벤트 텍스트 #2",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        },
+        {
+            "Text": "이벤트 텍스트 #3",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        },
+        {
+            "Text": "이벤트 텍스트 #4",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        },
+        {
+            "Text": "이벤트 텍스트 #5",
+            "Action": "OpenUrl",
+            "Url": "https://github.com/CK24-Surround"
+        }]
+    }
+}

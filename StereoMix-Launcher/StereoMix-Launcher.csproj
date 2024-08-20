@@ -10,6 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Folder Include="events\images\" />
       <Folder Include="resources\" />
     </ItemGroup>
 
