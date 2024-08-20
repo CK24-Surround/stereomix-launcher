@@ -28,6 +28,8 @@
       <Resource Include="resources\Logo\Discord.png" />
       <None Remove="resources\Surround.ico" />
       <Resource Include="resources\Surround.ico" />
+      <None Remove="resources\GRAC\GRAC_All.png" />
+      <Resource Include="resources\GRAC\GRAC_All.png" />
     </ItemGroup>
 
 </Project>

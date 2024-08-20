@@ -9,3 +9,4 @@ dotnet publish -c Release -r win-x64
 - Download and install [Inno Setup](http://www.jrsoftware.org/isdl.php)
 - Open `StereoMix-Launcher.iss` with Inno Setup
 - Click on `Build` > `Compile`
+- The installer will be created in the `Output` folder

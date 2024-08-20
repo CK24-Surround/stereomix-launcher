@@ -97,9 +97,37 @@
                 </Border>
             </StackPanel>
             
+            <StackPanel Margin="155,0,0,40" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0">
+                        <Border Background="#99000000" Width="333" Height="150" CornerRadius="20" HorizontalAlignment="Left"></Border>
+                    </Border>
+                    <Border Grid.Column="1">
+                        <Image Opacity="0.8" Width="35" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Source="resources/GRAC/GRAC_All.png"></Image>
+                    </Border>
+                </Grid>
+            </StackPanel>
+            
             <!-- UI 내용 -->
-            <StackPanel Margin="160,46,0,0" Width="1050" HorizontalAlignment="Left">
-
+            <StackPanel Margin="155,0,0,140" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Width="333" HorizontalAlignment="Left" BorderBrush="White" BorderThickness="3" CornerRadius="19">
+                        <Image Width="333" Height="210">
+                            <Image.Source>resources/Background.png</Image.Source>
+                            <Image.Clip>
+                                <RectangleGeometry Rect="0,0,328,210" RadiusX="19" RadiusY="19"/>
+                            </Image.Clip>
+                        </Image>
+                    </Border>
+                </Grid>
             </StackPanel>
 
             <!-- 커스텀 타이틀 바 -->
