@@ -318,7 +318,6 @@ public partial class MainWindow : Window
         SetDownloadVisibility(Visibility.Visible);
 
         var assetUrl = await GetDownloadUrl();
-        MessageBox.Show(assetUrl);
         if (!string.IsNullOrEmpty(assetUrl))
         {
             await DownloadAndExtractZip(assetUrl);
