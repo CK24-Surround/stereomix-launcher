@@ -29,6 +29,11 @@ public partial class MainWindow : Window
     
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
+    
+    private DispatcherTimer _eventTimer;
+    private readonly List<BitmapImage> _bannerImages = new();
+    private readonly List<string> _bannerUrls = new();
+    private int _currentBannerIndex;
 
     public MainWindow()
     {
@@ -114,7 +119,24 @@ public partial class MainWindow : Window
             return;
         }
 
+        _eventTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(10)
+        };
+        _eventTimer.Tick += OnEventTimerTick;
+        _eventTimer.Start();
+        
         DisplayEvents(json);
+    }
+    
+    private void OnEventTimerTick(object? sender, EventArgs e)
+    {
+        var oldIndex = _currentBannerIndex;
+        _currentBannerIndex = (_currentBannerIndex + 1) % _bannerImages.Count;
+        if (oldIndex != _currentBannerIndex)
+        {
+            UpdateBanner();
+        }
     }
 
     private async Task<string> LoadEventsFromFile(string filePath)
@@ -134,11 +156,6 @@ public partial class MainWindow : Window
     {
         foreach (var (element, index) in json.RootElement.GetProperty("Images").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
         {
-            if (index + 1 > 1)
-            {
-                break;
-            }
-            
             var source = element.GetProperty("Source").GetString();
             var date = element.GetProperty("Date");
             var formattedDate = $"{date.GetProperty("Month").GetInt32()}/{date.GetProperty("Day").GetInt32()}";
@@ -171,18 +188,46 @@ public partial class MainWindow : Window
         }
     }
     
+    private void UpdateBanner()
+    {
+        var bannerImage = _bannerImages[_currentBannerIndex];
+        AnimateBannerChange(bannerImage);
+        EventBanner.Click += (_, _) => OpenUrl(_bannerUrls[_currentBannerIndex]);
+    }
+    
+    private void AnimateBannerChange(BitmapImage newImage)
+    {
+        var fadeOut = new DoubleAnimation(0, TimeSpan.FromSeconds(0.3));
+        var fadeIn = new DoubleAnimation(1, TimeSpan.FromSeconds(0.3));
+
+        fadeOut.Completed += (_, _) =>
+        {
+            EventBannerImage.Source = newImage;
+            EventBannerImage.BeginAnimation(OpacityProperty, fadeIn);
+        };
+
+        EventBannerImage.BeginAnimation(OpacityProperty, fadeOut);
+    }
+    
     private async void AddEventBanner(string? source, string? date, string? url, int index)
     {
-        EventBanner.Click += (_, _) => OpenUrl(url);
         try
         {
             if (source == null)
             {
-                EventBannerImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+                _bannerImages.Add(new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png")));
                 return;
             }
-            var bannerImage = await DownloadImageAsync(new Uri(source));
-            EventBannerImage.Source = bannerImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+
+            var uri = new Uri($"{BaseRawUrl}/{source}?raw=true");
+            var bannerImage = await DownloadImageAsync(uri) ?? new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
+            _bannerImages.Add(bannerImage);
+            _bannerUrls.Add(url ?? string.Empty);
+            
+            if (index == 0)
+            {
+                UpdateBanner();
+            }
         }
         catch
         {

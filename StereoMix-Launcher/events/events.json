@@ -4,11 +4,21 @@
             "Date": {
                 "Year": 2024,
                 "Month": 8,
-                "Day": 20
+                "Day": 11
             },
             "Source": "/events/images/10000.png",
             "Action": "OpenUrl",
             "Url": "https://discord.gg/bPCr4sy7QR"
+        },
+        {
+            "Date": {
+                "Year": 2024,
+                "Month": 8,
+                "Day": 21
+            },
+            "Source": "/events/images/10001.png",
+            "Action": "OpenUrl",
+            "Url": "https://x.com/StereomixGame/status/1825858027666420105"
         }]
     },
     "Links": {
@@ -16,7 +26,17 @@
             "Date": {
                 "Year": 2024,
                 "Month": 8,
-                "Day": 20
+                "Day": 16
+            },
+            "Text": "#StereoMix가 \"BIC\"에 루키부문으로 참여합니다!",
+            "Action": "OpenUrl",
+            "Url": "https://x.com/StereomixGame/status/1812753926174978406"
+        }, 
+        {
+            "Date": {
+                "Year": 2024,
+                "Month": 8,
+                "Day": 11
             },
             "Text": "공식 디스코드에 가입하세요!",
             "Action": "OpenUrl",
@@ -25,8 +45,8 @@
         {
             "Date": {
                 "Year": 2024,
-                "Month": 8,
-                "Day": 20
+                "Month": 7,
+                "Day": 15
             },
             "Text": "공식 X 계정을 팔로우 해주세요!",
             "Action": "OpenUrl",
