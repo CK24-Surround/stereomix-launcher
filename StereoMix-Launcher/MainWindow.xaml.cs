@@ -54,6 +54,7 @@ public partial class MainWindow : Window
 
         if (!File.Exists(GamePath) || !File.Exists(VersionPath))
         {
+            StartButton.Content = "게임 설치";
             await DownloadLatest();
             return;
         }
@@ -61,10 +62,12 @@ public partial class MainWindow : Window
         var version = await ReadVersionFromFile();
         if (version == null || await GetLatestTagFromGitHub() != version)
         {
+            StartButton.Content = version == null ? "게임 설치" : "게임 업데이트";
             await DownloadLatest();
         }
         else
         {
+            StartButton.Content = "게임 실행";
             LaunchGame();
         }
     }
