@@ -118,12 +118,12 @@
             <!-- SNS 버튼들 -->
             <StackPanel HorizontalAlignment="Right" Width="70" Height="450" Margin="0,0,0,120">
                 <Border Padding="0,0,0,5">
-                    <Button Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55" Click="SNS_X_Button_Click">
+                    <Button x:Name="XButton" Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55">
                         <Image Width="30" Source="resources/Logo/X.png"/>
                     </Button>
                 </Border>
                 <Border Padding="0,0,0,5">
-                    <Button Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55" Click="SNS_Discord_Button_Click">
+                    <Button x:Name="DiscordButton" Style="{StaticResource CommonButtonStyle}" Background="Transparent" Height="55" Width="55">
                         <Image Width="35" Source="resources/Logo/Discord.png"/>
                     </Button>
                 </Border>
@@ -142,7 +142,7 @@
                 </Border>
             </StackPanel>
 
-            <!-- 링크 버튼들 -->
+            <!-- 이벤트 링크 -->
             <StackPanel Margin="155,0,0,40" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -157,9 +157,9 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="0" Content="Link #1"/>
-                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="1" Content="Link #2"/>
-                                <Button Style="{StaticResource LinkButtonStyle}" Grid.Row="2" Content="Link #3"/>
+                                <Button x:Name="LinkButton1" Style="{StaticResource LinkButtonStyle}" Grid.Row="0" Content=""/>
+                                <Button x:Name="LinkButton2" Style="{StaticResource LinkButtonStyle}" Grid.Row="1" Content=""/>
+                                <Button x:Name="LinkButton3" Style="{StaticResource LinkButtonStyle}" Grid.Row="2" Content=""/>
                             </Grid>
                         </Border>
                     </Border>
@@ -169,7 +169,7 @@
                 </Grid>
             </StackPanel>
 
-            <!-- UI 내용 -->
+            <!-- 이벤트 내용 -->
             <StackPanel Margin="155,0,0,140" Width="666" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                 <Grid>
                     <Grid.ColumnDefinitions>

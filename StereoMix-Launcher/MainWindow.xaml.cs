@@ -26,7 +26,21 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
+        
+        BindSnsButtons();
+        CheckGameEvents();
         CheckGameInstallation();
+    }
+
+    private void BindSnsButtons()
+    {
+        XButton.Click += (_, _) => OpenUrl("https://x.com/StereomixGame");
+        DiscordButton.Click += (_, _) => OpenUrl("https://discord.gg/bPCr4sy7QR");
+    }
+
+    private void CheckGameEvents()
+    {
+        LinkButton1.Click += (_, _) => OpenUrl("https://naver.com");
     }
 
     private async void CheckGameInstallation()
@@ -336,16 +350,6 @@ public partial class MainWindow : Window
 
         storyboard.Completed += (_, _) => onCompleted?.Invoke();
         storyboard.Begin();
-    }
-
-    private void SNS_X_Button_Click(object sender, RoutedEventArgs e)
-    {
-        OpenUrl("https://x.com/StereomixGame");
-    }
-
-    private void SNS_Discord_Button_Click(object sender, RoutedEventArgs e)
-    {
-        OpenUrl("https://discord.gg/bPCr4sy7QR");
     }
 
     private void OpenUrl(string url)
