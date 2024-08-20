@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Windows.Media.Imaging;
 
 namespace StereoMix_Launcher;
 
@@ -21,6 +22,9 @@ public partial class MainWindow : Window
     
     private const string DownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
     private const string EventsUrl = "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
+
+    private const string LatestBackgroundImage = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
+    private const string LatestGradientBackgroundImage = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/GradientBackground.png?raw=true";
     
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
@@ -33,6 +37,54 @@ public partial class MainWindow : Window
         BindSnsButtons();
         CheckGameEvents();
         CheckGameInstallation();
+        FetchLatestBackgroundImage();
+    }
+
+    private async void FetchLatestBackgroundImage()
+    {
+        var backgroundImageUri = new Uri(LatestBackgroundImage);
+        var gradientBackgroundImageUri = new Uri(LatestGradientBackgroundImage);
+        
+        try
+        {
+            var backgroundImage = await DownloadImageAsync(backgroundImageUri);
+            BackgroundImage.Source = backgroundImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
+        }
+        catch
+        {
+            BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
+        }
+
+        try
+        {
+            var gradientImage = await DownloadImageAsync(gradientBackgroundImageUri);
+            GradientBackgroundImage.Source = gradientImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
+        }
+        catch
+        {
+            GradientBackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
+        }
+    }
+
+    private async Task<BitmapImage?> DownloadImageAsync(Uri uri)
+    {
+        using var client = new HttpClient();
+        try
+        {
+            var imageData = await client.GetByteArrayAsync(uri);
+            using var stream = new MemoryStream(imageData);
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.StreamSource = stream;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void BindSnsButtons()
