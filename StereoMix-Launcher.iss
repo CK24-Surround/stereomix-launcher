@@ -4,6 +4,7 @@
 #define MyAppName "StereoMix Launcher"
 #define MyAppVersion "1.0"
 #define MyAppPublisher "Surround"
+#define MyAppURL "https://discord.gg/bPCr4sy7QR"
 #define MyAppExeName "StereoMix-Launcher.exe"
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".myp"
@@ -12,34 +13,37 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{FC4D776E-2184-4507-9D97-66E3E3EDCD2B}
+AppId={{E3DDE306-2A5C-4ED3-9F33-D5D156A7F324}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
-OutputDir=C:\Users\reeli\Downloads
 OutputBaseFilename=StereoMix-Launcher
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 
 [Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\reeli\Git\StereoMix-Launcher\StereoMix-Launcher\bin\Debug\net8.0-windows\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\reeli\Git\StereoMix-Launcher\StereoMix-Launcher\bin\Debug\net8.0-windows\StereoMix-Launcher.deps.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\reeli\Git\StereoMix-Launcher\StereoMix-Launcher\bin\Debug\net8.0-windows\StereoMix-Launcher.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\reeli\Git\StereoMix-Launcher\StereoMix-Launcher\bin\Debug\net8.0-windows\StereoMix-Launcher.pdb"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\reeli\Git\StereoMix-Launcher\StereoMix-Launcher\bin\Debug\net8.0-windows\StereoMix-Launcher.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\StereoMix-Launcher\bin\Release\net8.0-windows\win-x64\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\StereoMix-Launcher\bin\Release\net8.0-windows\win-x64\StereoMix-Launcher.deps.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\StereoMix-Launcher\bin\Release\net8.0-windows\win-x64\StereoMix-Launcher.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\StereoMix-Launcher\bin\Release\net8.0-windows\win-x64\StereoMix-Launcher.pdb"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\StereoMix-Launcher\bin\Release\net8.0-windows\win-x64\StereoMix-Launcher.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
