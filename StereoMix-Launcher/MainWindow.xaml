@@ -7,7 +7,33 @@
         Title="StereoMix Launcher" Height="700" Width="1200" ResizeMode="NoResize"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
-    <Border Background="White" CornerRadius="12">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="12">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#66000000"/> <!-- 투명도 40% 적용된 검정색 -->
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#99000000"/> <!-- 투명도 60% 적용된 검정색 -->
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="Black" CornerRadius="12">
         <Grid>
             <Border Margin="90,0,0,0" Height="700" Width="1110" CornerRadius="0,12,12,0">
                 <StackPanel VerticalAlignment="Center">
@@ -45,9 +71,14 @@
             
             <!-- SNS -->
             <StackPanel HorizontalAlignment="Right" Width="70" Height="450" Margin="0,0,0,120">
-                <Border Padding="0,0,0,30">
-                    <Button VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Width="30" Click="SNS_X_Button_Click">
-                        <Image Source="resources/Logo/X.png"/>
+                <Border Padding="0,0,0,5">
+                    <Button Style="{StaticResource ButtonStyle}" VerticalAlignment="Center" Background="Transparent" Height="55" Width="55" Click="SNS_X_Button_Click">
+                        <Image Width="30" Source="resources/Logo/X.png"/>
+                    </Button>
+                </Border>
+                <Border Padding="0,0,0,5">
+                    <Button Style="{StaticResource ButtonStyle}" VerticalAlignment="Center" Background="Transparent" Height="55" Width="55" Click="SNS_Discord_Button_Click">
+                        <Image Width="35" Source="resources/Logo/Discord.png"/>
                     </Button>
                 </Border>
             </StackPanel>
@@ -76,11 +107,11 @@
                 <DockPanel LastChildFill="False">
                     <Border Width="30" Height="30" CornerRadius="12" HorizontalAlignment="Right" Margin="0, 2, 6, 0" DockPanel.Dock="Right">
                         <Button Content="X" Background="Transparent" FontSize="20" FontWeight="Bold" Foreground="White"
-                                BorderBrush="Transparent" BorderThickness="0" Click="CloseButton_Click"/>
+                                Style="{StaticResource ButtonStyle}" Click="CloseButton_Click"/>
                     </Border>
                     <Border Width="30" Height="30" CornerRadius="12" HorizontalAlignment="Right" Margin="0, 2, 6, 0" DockPanel.Dock="Right">
                         <Button Content="-" Background="Transparent" FontSize="20" FontWeight="Bold" Foreground="White"
-                                BorderBrush="Transparent" BorderThickness="0" Click="MinimizeButton_Click"/>
+                                Style="{StaticResource ButtonStyle}" Click="MinimizeButton_Click"/>
                     </Border>
                 </DockPanel>
             </Border>

@@ -24,6 +24,8 @@
       <Resource Include="resources\Surround.png" />
       <None Remove="resources\Logo\X.png" />
       <Resource Include="resources\Logo\X.png" />
+      <None Remove="resources\Logo\Discord.png" />
+      <Resource Include="resources\Logo\Discord.png" />
     </ItemGroup>
 
 </Project>

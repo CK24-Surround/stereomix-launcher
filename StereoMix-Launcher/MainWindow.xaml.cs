@@ -1,12 +1,14 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Diagnostics;
+using System.ComponentModel;
 
 namespace StereoMix_Launcher;
 
@@ -14,7 +16,8 @@ public partial class MainWindow : Window
 {
     private const string ExtractPath = "./StereoMix";
     private const string GamePath = $"{ExtractPath}/StereoMix.exe";
-    private const string DownloadUrl = "http://192.168.0.6:49152/_d/0C7C75CD13B6054";
+    private const string VersionPath = "./Version.json";
+    private const string DownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
     
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
@@ -26,21 +29,43 @@ public partial class MainWindow : Window
         CheckGameInstallation();
     }
 
-    private void CheckGameInstallation()
+    private async void CheckGameInstallation()
     {
-        StartButton.Content = File.Exists(GamePath) ? "게임 실행" : "게임 설치";
+        if (!File.Exists(GamePath) || !File.Exists(VersionPath))
+        {
+            StartButton.Content = "게임 설치";
+            return;
+        }
+
+        var version = await ReadVersionFromFile();
+        if (version == null)
+        {
+            StartButton.Content = "게임 설치";
+            return;
+        }
+
+        var latestVersion = await GetLatestTagFromGitHub();
+        StartButton.Content = latestVersion == version ? "게임 실행" : "게임 업데이트";
     }
 
-    private void StartButton_Click(object sender, RoutedEventArgs e)
+    private async void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        if (File.Exists(GamePath))
+        StartButton.IsEnabled = false;
+
+        if (!File.Exists(GamePath) || !File.Exists(VersionPath))
         {
-            LaunchGame();
+            await DownloadLatest();
+            return;
+        }
+
+        var version = await ReadVersionFromFile();
+        if (version == null || await GetLatestTagFromGitHub() != version)
+        {
+            await DownloadLatest();
         }
         else
         {
-            StartButton.IsEnabled = false;
-            DownloadLatest();
+            LaunchGame();
         }
     }
 
@@ -58,52 +83,114 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void DownloadLatest()
+    private async Task DownloadLatest()
     {
-        DownloadProgressBar.Visibility = Visibility.Visible;
-        DownloadProgressText.Visibility = Visibility.Visible;
-        await DownloadAndExtractZip(DownloadUrl, ExtractPath);
+        SetDownloadVisibility(Visibility.Visible);
+
+        var assetUrl = await GetDownloadUrlFromGitHub();
+        if (!string.IsNullOrEmpty(assetUrl))
+        {
+            await DownloadAndExtractZip(assetUrl);
+        }
+        else
+        {
+            ShowError("다운로드 URL을 가져오지 못했습니다.");
+        }
     }
 
-    private async Task DownloadAndExtractZip(string url, string extractPath)
+    private async Task<string?> ReadVersionFromFile()
+    {
+        try
+        {
+            var versionJson = await File.ReadAllTextAsync(VersionPath);
+            return JsonSerializer.Deserialize<JsonDocument>(versionJson)?.RootElement.GetProperty("tag_name").GetString();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<string?> GetLatestTagFromGitHub()
+    {
+        return await GetValueFromGitHub("tag_name");
+    }
+
+    private void SaveJsonToFile(string? jsonContent, string filePath)
+    {
+        try
+        {
+            File.WriteAllText(filePath, jsonContent);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"파일 저장 중 오류 발생: {ex.Message}");
+        }
+    }
+    
+    private async Task<string?> GetDownloadUrlFromGitHub()
+    {
+        using var client = CreateHttpClient();
+        try
+        {
+            var response = await client.GetFromJsonAsync<JsonDocument>(DownloadUrl);
+            var assets = response?.RootElement.GetProperty("assets");
+            if (assets.HasValue)
+            {
+                foreach (var asset in assets.Value.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith(".zip") == true))
+                {
+                    SaveJsonToFile(response?.RootElement.ToString(), VersionPath);
+                    return asset.GetProperty("browser_download_url").GetString();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"오류 발생: {ex.Message}");
+        }
+        return string.Empty;
+    }
+
+    private async Task<string?> GetValueFromGitHub(string propertyName)
+    {
+        using var client = CreateHttpClient();
+        try
+        {
+            var response = await client.GetFromJsonAsync<JsonDocument>(DownloadUrl);
+            return response?.RootElement.GetProperty(propertyName).ToString();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"오류 발생: {ex.Message}");
+        }
+        return string.Empty;
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+        return client;
+    }
+
+    private async Task DownloadAndExtractZip(string url)
     {
         var tempZipPath = Path.Combine(Path.GetTempPath(), "StereoMix.zip");
 
         await Task.Run(async () =>
         {
-            using var client = new HttpClient();
+            using var client = CreateHttpClient();
             try
             {
                 var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
 
-                var totalBytes = response.Content.Headers.ContentLength ?? 1L;
-
-                await using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    var contentStream = await response.Content.ReadAsStreamAsync();
-                    var buffer = new byte[8192];
-                    int bytesRead;
-                    long totalRead = 0;
-                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                    {
-                        await fs.WriteAsync(buffer, 0, bytesRead);
-                        totalRead += bytesRead;
-                        UpdateProgress(totalRead, totalBytes);
-                    }
-                }
-
-                if (Directory.Exists(extractPath))
-                {
-                    Directory.Delete(extractPath, true);
-                }
-
-                ZipFile.ExtractToDirectory(tempZipPath, extractPath);
+                await SaveToFile(response, tempZipPath);
+                ExtractZip(tempZipPath);
 
                 Dispatcher.Invoke(() =>
                 {
-                    DownloadProgressBar.Visibility = Visibility.Hidden;
-                    DownloadProgressText.Visibility = Visibility.Hidden;
+                    SetDownloadVisibility(Visibility.Hidden);
                     StartButton.Content = "게임 실행";
                     StartButton.IsEnabled = true;
                 });
@@ -112,9 +199,8 @@ public partial class MainWindow : Window
             {
                 Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show($"오류 발생: {ex.Message}");
-                    DownloadProgressBar.Visibility = Visibility.Hidden;
-                    DownloadProgressText.Visibility = Visibility.Hidden;
+                    ShowError($"오류 발생: {ex.Message}");
+                    SetDownloadVisibility(Visibility.Hidden);
                     StartButton.IsEnabled = true;
                 });
             }
@@ -128,12 +214,37 @@ public partial class MainWindow : Window
         });
     }
 
+    private async Task SaveToFile(HttpResponseMessage response, string path)
+    {
+        await using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        var contentStream = await response.Content.ReadAsStreamAsync();
+        var buffer = new byte[8192];
+        int bytesRead;
+        long totalRead = 0;
+        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        {
+            await fs.WriteAsync(buffer, 0, bytesRead);
+            totalRead += bytesRead;
+            UpdateProgress(totalRead, response.Content.Headers.ContentLength ?? 1L);
+        }
+    }
+
+    private void ExtractZip(string zipPath)
+    {
+        if (Directory.Exists(ExtractPath))
+        {
+            Directory.Delete(ExtractPath, true);
+        }
+
+        ZipFile.ExtractToDirectory(zipPath, ExtractPath);
+    }
+
     private void UpdateProgress(long bytesReceived, long totalBytes)
     {
         Dispatcher.Invoke(() =>
         {
-            DateTime now = DateTime.Now;
-            TimeSpan timeSinceLastUpdate = now - _lastUpdateTime;
+            var now = DateTime.Now;
+            var timeSinceLastUpdate = now - _lastUpdateTime;
             
             if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
             {
@@ -141,32 +252,29 @@ public partial class MainWindow : Window
                 _lastBytesReceived = bytesReceived;
             }
 
-            long bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
-            double downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
+            var bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
+            var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
 
-            double progressPercentage = (double)bytesReceived / totalBytes * 100;
+            var progressPercentage = (double)bytesReceived / totalBytes * 100;
             DownloadProgressBar.Value = progressPercentage;
             DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
         }, DispatcherPriority.Background);
     }
 
+    private void SetDownloadVisibility(Visibility visibility)
+    {
+        DownloadProgressBar.Visibility = visibility;
+        DownloadProgressText.Visibility = visibility;
+    }
+
+    private void ShowError(string message)
+    {
+        MessageBox.Show(message);
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        var storyboard = new Storyboard();
-
-        var opacityAnimation = new DoubleAnimation
-        {
-            To = 0,
-            Duration = TimeSpan.FromSeconds(0.3)
-        };
-        Storyboard.SetTarget(opacityAnimation, this);
-        Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(OpacityProperty));
-
-        storyboard.Children.Add(opacityAnimation);
-
-        storyboard.Completed += (_, _) => Close();
-
-        storyboard.Begin();
+        AnimateWindowOpacity(0, Close);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -176,71 +284,76 @@ public partial class MainWindow : Window
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        var storyboard = new Storyboard();
-
-        var heightAnimation = new DoubleAnimation
-        {
-            To = 0,
-            Duration = TimeSpan.FromSeconds(0.3)
-        };
-        Storyboard.SetTarget(heightAnimation, this);
-        Storyboard.SetTargetProperty(heightAnimation, new PropertyPath(HeightProperty));
-
-        var opacityAnimation = new DoubleAnimation
-        {
-            To = 0,
-            Duration = TimeSpan.FromSeconds(0.3)
-        };
-        Storyboard.SetTarget(opacityAnimation, this);
-        Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(OpacityProperty));
-
-        storyboard.Children.Add(heightAnimation);
-        storyboard.Children.Add(opacityAnimation);
-
-        storyboard.Completed += (_, _) => WindowState = WindowState.Minimized;
-
-        storyboard.Begin();
+        AnimateWindowHeight(0, () => WindowState = WindowState.Minimized);
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
     {
         if (WindowState == WindowState.Normal)
         {
-            var storyboard = new Storyboard();
-
-            var heightAnimation = new DoubleAnimation
-            {
-                To = 700,
-                Duration = TimeSpan.FromSeconds(0.3)
-            };
-            Storyboard.SetTarget(heightAnimation, this);
-            Storyboard.SetTargetProperty(heightAnimation, new PropertyPath(HeightProperty));
-
-            var opacityAnimation = new DoubleAnimation
-            {
-                To = 1,
-                Duration = TimeSpan.FromSeconds(0.3)
-            };
-            Storyboard.SetTarget(opacityAnimation, this);
-            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(OpacityProperty));
-
-            storyboard.Children.Add(heightAnimation);
-            storyboard.Children.Add(opacityAnimation);
-
-            storyboard.Begin();
+            AnimateWindowHeight(700, () => { });
         }
+    }
+
+    private void AnimateWindowOpacity(double to, Action? onCompleted = null)
+    {
+        var storyboard = new Storyboard();
+        var animation = new DoubleAnimation
+        {
+            To = to,
+            Duration = TimeSpan.FromSeconds(0.3)
+        };
+        Storyboard.SetTarget(animation, this);
+        Storyboard.SetTargetProperty(animation, new PropertyPath(OpacityProperty));
+        storyboard.Children.Add(animation);
+        storyboard.Completed += (_, _) => onCompleted?.Invoke();
+        storyboard.Begin();
+    }
+
+    private void AnimateWindowHeight(double to, Action? onCompleted = null)
+    {
+        var storyboard = new Storyboard();
+        var animation = new DoubleAnimation
+        {
+            To = to,
+            Duration = TimeSpan.FromSeconds(0.3)
+        };
+        Storyboard.SetTarget(animation, this);
+        Storyboard.SetTargetProperty(animation, new PropertyPath(HeightProperty));
+        storyboard.Children.Add(animation);
+
+        var opacityAnimation = new DoubleAnimation
+        {
+            To = to == 0 ? 0 : 1,
+            Duration = TimeSpan.FromSeconds(0.3)
+        };
+        Storyboard.SetTarget(opacityAnimation, this);
+        Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(OpacityProperty));
+        storyboard.Children.Add(opacityAnimation);
+
+        storyboard.Completed += (_, _) => onCompleted?.Invoke();
+        storyboard.Begin();
     }
 
     private void SNS_X_Button_Click(object sender, RoutedEventArgs e)
     {
-        var url = "https://x.com/StereomixGame";
+        OpenUrl("https://x.com/StereomixGame");
+    }
+
+    private void SNS_Discord_Button_Click(object sender, RoutedEventArgs e)
+    {
+        OpenUrl("https://discord.gg/bPCr4sy7QR");
+    }
+
+    private void OpenUrl(string url)
+    {
         try
         {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Win32Exception error)
         {
-            MessageBox.Show(error.Message);
+            ShowError(error.Message);
         }
     }
 }
