@@ -33,6 +33,8 @@
       <Resource Include="resources\GRAC\GRAC_All.png" />
       <None Remove="resources\ImageLoadFailed.png" />
       <Resource Include="resources\ImageLoadFailed.png" />
+      <None Remove="resources\Logo\Github.png" />
+      <Resource Include="resources\Logo\Github.png" />
     </ItemGroup>
 
 </Project>

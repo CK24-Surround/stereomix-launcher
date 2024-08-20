@@ -97,6 +97,7 @@ public partial class MainWindow : Window
     {
         XButton.Click += (_, _) => OpenUrl("https://x.com/StereomixGame");
         DiscordButton.Click += (_, _) => OpenUrl("https://discord.gg/bPCr4sy7QR");
+        GithubButton.Click += (_, _) => OpenUrl("https://github.com/CK24-Surround");
     }
 
     private async void CheckGameEvents()
