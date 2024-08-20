@@ -12,8 +12,12 @@ namespace StereoMix_Launcher;
 
 public partial class MainWindow : Window
 {
-    private const string GamePath = "./StereoMix/StereoMix.exe";
-    private const string DownloadUrl = "https://example.com/StereoMix.zip";
+    private const string ExtractPath = "./StereoMix";
+    private const string GamePath = $"{ExtractPath}/StereoMix.exe";
+    private const string DownloadUrl = "http://192.168.0.6:49152/_d/0C7C75CD13B6054";
+    
+    private DateTime _lastUpdateTime;
+    private long _lastBytesReceived;
 
     public MainWindow()
     {
@@ -56,61 +60,88 @@ public partial class MainWindow : Window
 
     private async void DownloadLatest()
     {
-        string extractPath = "./StereoMix";
-        await DownloadAndExtractZip(DownloadUrl, extractPath);
+        DownloadProgressBar.Visibility = Visibility.Visible;
+        DownloadProgressText.Visibility = Visibility.Visible;
+        await DownloadAndExtractZip(DownloadUrl, ExtractPath);
     }
 
     private async Task DownloadAndExtractZip(string url, string extractPath)
     {
-        string tempZipPath = Path.Combine(Path.GetTempPath(), "StereoMix.zip");
+        var tempZipPath = Path.Combine(Path.GetTempPath(), "StereoMix.zip");
 
-        using var client = new HttpClient();
-        try
+        await Task.Run(async () =>
         {
-            var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength ?? 1L;
-
-            await using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using var client = new HttpClient();
+            try
             {
-                var contentStream = await response.Content.ReadAsStreamAsync();
-                var buffer = new byte[8192];
-                int bytesRead;
-                long totalRead = 0;
-                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+
+                var totalBytes = response.Content.Headers.ContentLength ?? 1L;
+
+                await using (var fs = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
-                    totalRead += bytesRead;
-                    UpdateProgress(totalRead, totalBytes);
+                    var contentStream = await response.Content.ReadAsStreamAsync();
+                    var buffer = new byte[8192];
+                    int bytesRead;
+                    long totalRead = 0;
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, bytesRead);
+                        totalRead += bytesRead;
+                        UpdateProgress(totalRead, totalBytes);
+                    }
+                }
+
+                ZipFile.ExtractToDirectory(tempZipPath, extractPath);
+
+                Dispatcher.Invoke(() =>
+                {
+                    DownloadProgressBar.Visibility = Visibility.Hidden;
+                    DownloadProgressText.Visibility = Visibility.Hidden;
+                    StartButton.Content = "게임 실행";
+                    StartButton.IsEnabled = true;
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"오류 발생: {ex.Message}");
+                    DownloadProgressBar.Visibility = Visibility.Hidden;
+                    DownloadProgressText.Visibility = Visibility.Hidden;
+                    StartButton.IsEnabled = true;
+                });
+            }
+            finally
+            {
+                if (File.Exists(tempZipPath))
+                {
+                    File.Delete(tempZipPath);
                 }
             }
-
-            ZipFile.ExtractToDirectory(tempZipPath, extractPath);
-            MessageBox.Show("다운로드 및 압축 해제가 완료되었습니다.");
-            StartButton.Content = "게임 실행";
-            StartButton.IsEnabled = true;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"오류 발생: {ex.Message}");
-            StartButton.IsEnabled = true;
-        }
-        finally
-        {
-            if (File.Exists(tempZipPath))
-            {
-                File.Delete(tempZipPath);
-            }
-        }
+        });
     }
 
     private void UpdateProgress(long bytesReceived, long totalBytes)
     {
         Dispatcher.Invoke(() =>
         {
+            DateTime now = DateTime.Now;
+            TimeSpan timeSinceLastUpdate = now - _lastUpdateTime;
+            
+            if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
+            {
+                _lastUpdateTime = now;
+                _lastBytesReceived = bytesReceived;
+            }
+
+            long bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
+            double downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
+
             double progressPercentage = (double)bytesReceived / totalBytes * 100;
             DownloadProgressBar.Value = progressPercentage;
+            DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
         }, DispatcherPriority.Background);
     }
 
