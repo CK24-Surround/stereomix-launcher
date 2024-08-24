@@ -156,7 +156,7 @@ public static class FileHelper
 
     private static async Task DownloadLauncher(MainWindow window)
     {
-        var tempFile = Path.Combine(window.InstallDirectory, "StereoMix-Launcher-Installer.exe");
+        var tempFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix-Launcher-Installer.exe");
         try
         {
             await Task.Run(async () =>
