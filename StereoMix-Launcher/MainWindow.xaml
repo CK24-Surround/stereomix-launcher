@@ -175,6 +175,10 @@
                     </Button>
                 </Border>
             </StackPanel>
+            
+            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="105,0,0,5">
+                <TextBlock x:Name="LauncherVersion" Foreground="White" Opacity="0.6"/>
+            </Border>
 
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
                 <!-- 다운로드 진행률 -->

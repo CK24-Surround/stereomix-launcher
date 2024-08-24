@@ -10,17 +10,26 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows.Media.Imaging;
 
 namespace StereoMix_Launcher;
+
+enum DownloadType
+{
+    Game,
+    Launcher
+}
 
 public partial class MainWindow : Window
 {
     private const string ExtractPath = "./StereoMix";
     private const string GamePath = $"{ExtractPath}/StereoMix.exe";
-    private const string VersionPath = "./Version.json";
+    private const string GameVersionPath = "./Version.json";
     
-    private const string DownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
+    private const string GameDownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
+    private const string LauncherDownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix-launcher/releases/latest";
+    
     private const string EventsUrl = "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
 
     private const string BaseRawUrl = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
@@ -39,11 +48,19 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
+        LauncherVersion.Text = GetLauncherVersion();
         
         BindSnsButtons();
         CheckGameEvents();
         CheckGameInstallation();
         FetchBackgroundImage();
+    }
+    
+    private string GetLauncherVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var attribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+        return attribute != null ? attribute.InformationalVersion : "Unknown Version";
     }
 
     private async void FetchBackgroundImage()
@@ -259,9 +276,19 @@ public partial class MainWindow : Window
 
     private async void CheckGameInstallation()
     {
-        if (!File.Exists(GamePath) || !File.Exists(VersionPath))
+        StartButton.IsEnabled = false;
+        
+        if (await GetLatestTagFromGitHub(LauncherDownloadUrl) != GetLauncherVersion())
+        {
+            StartButton.Content = "런처 업데이트";
+            StartButton.IsEnabled = true;
+            return;
+        }
+        
+        if (!File.Exists(GamePath) || !File.Exists(GameVersionPath))
         {
             StartButton.Content = "게임 설치";
+            StartButton.IsEnabled = true;
             return;
         }
 
@@ -269,40 +296,49 @@ public partial class MainWindow : Window
         if (version == null)
         {
             StartButton.Content = "게임 설치";
+            StartButton.IsEnabled = true;
             return;
         }
 
-        var latestVersion = await GetLatestTagFromGitHub();
+        var latestVersion = await GetLatestTagFromGitHub(GameDownloadUrl);
         StartButton.Content = latestVersion == version ? "게임 실행" : "게임 업데이트";
+        StartButton.IsEnabled = true;
     }
 
     private async void StartButton_Click(object sender, RoutedEventArgs e)
     {
         StartButton.IsEnabled = false;
 
-        if (!File.Exists(GamePath) || !File.Exists(VersionPath))
+        if (await GetLatestTagFromGitHub(LauncherDownloadUrl) != GetLauncherVersion())
+        {
+            StartButton.Content = "런처 업데이트";
+            await DownloadLatest(LauncherDownloadUrl, DownloadType.Launcher);
+            return;
+        }
+
+        if (!File.Exists(GamePath) || !File.Exists(GameVersionPath))
         {
             StartButton.Content = "게임 설치";
-            await DownloadLatest();
+            await DownloadLatest(GameDownloadUrl, DownloadType.Game);
             return;
         }
 
         var version = await ReadVersionFromFile();
-        if (version == null || await GetLatestTagFromGitHub() != version)
+        if (version == null || await GetLatestTagFromGitHub(GameDownloadUrl) != version)
         {
             StartButton.Content = version == null ? "게임 설치" : "게임 업데이트";
-            await DownloadLatest();
+            await DownloadLatest(GameDownloadUrl, DownloadType.Game);
         }
         else
         {
             StartButton.Content = "게임 실행";
-            LaunchGame();
+            LaunchApp(GamePath);
         }
     }
 
-    private void LaunchGame()
+    private void LaunchApp(string path)
     {
-        var processStartInfo = new ProcessStartInfo(GamePath);
+        var processStartInfo = new ProcessStartInfo(path);
         try
         {
             Process.Start(processStartInfo);
@@ -314,14 +350,32 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task DownloadLatest()
+    private async Task DownloadLatest(string url, DownloadType type)
     {
         SetDownloadVisibility(Visibility.Visible);
 
-        var assetUrl = await GetDownloadUrl();
+        var assetUrl = string.Empty;
+        switch (type)
+        {
+            case DownloadType.Game: 
+                assetUrl = await GetDownloadUrl(url, "zip");
+                break;
+            case DownloadType.Launcher:
+                assetUrl = await GetDownloadUrl(url, "exe");
+                break;
+        }
+        
         if (!string.IsNullOrEmpty(assetUrl))
         {
-            await DownloadAndExtractZip(assetUrl);
+            switch (type)
+            {
+                case DownloadType.Game:
+                    await DownloadGame(assetUrl);
+                    break;
+                case DownloadType.Launcher:
+                    await DownloadLauncher(assetUrl);
+                    break;
+            }
         }
         else
         {
@@ -333,7 +387,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var versionJson = await File.ReadAllTextAsync(VersionPath);
+            var versionJson = await File.ReadAllTextAsync(GameVersionPath);
             return JsonSerializer.Deserialize<JsonDocument>(versionJson)?.RootElement.GetProperty("tag_name").GetString();
         }
         catch
@@ -342,9 +396,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task<string?> GetLatestTagFromGitHub()
+    private async Task<string?> GetLatestTagFromGitHub(string url)
     {
-        return await GetValueFromUrl(DownloadUrl, "tag_name");
+        return await GetValueFromUrl(url, "tag_name");
     }
 
     private void SaveJsonToFile(string? jsonContent, string filePath)
@@ -359,9 +413,9 @@ public partial class MainWindow : Window
         }
     }
     
-    private async Task<string?> GetDownloadUrl()
+    private async Task<string?> GetDownloadUrl(string url, string format)
     {
-        var taskResult = await GetValueFromUrl(DownloadUrl, "assets");
+        var taskResult = await GetValueFromUrl(url, "assets");
         if (taskResult == null)
         {
             return string.Empty;
@@ -373,7 +427,7 @@ public partial class MainWindow : Window
             return string.Empty;
         }
 
-        foreach (var asset in assets.RootElement.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith(".zip") == true))
+        foreach (var asset in assets.RootElement.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith($".{format}") == true))
         {
             return asset.GetProperty("browser_download_url").GetString();
         }
@@ -383,11 +437,11 @@ public partial class MainWindow : Window
     
     private async Task SaveVersion()
     {
-        await GetValueFromUrl(DownloadUrl).ContinueWith(task =>
+        await GetValueFromUrl(GameDownloadUrl).ContinueWith(task =>
         {
             if (task.Result != null)
             {
-                SaveJsonToFile(task.Result, VersionPath);
+                SaveJsonToFile(task.Result, GameVersionPath);
             }
         });
     }
@@ -417,8 +471,40 @@ public partial class MainWindow : Window
         client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         return client;
     }
+    
+    private async Task DownloadLauncher(string url)
+    {
+        var downloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix-Launcher-Installer.exe");
+        
+        await Task.Run(async () =>
+        {
+            using var client = CreateHttpClient();
+            try
+            {
+                var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
 
-    private async Task DownloadAndExtractZip(string url)
+                await SaveToFile(response, downloadPath);
+
+                Dispatcher.Invoke(() =>
+                {
+                    SetDownloadVisibility(Visibility.Hidden);
+                    LaunchApp(downloadPath);
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    ShowError(ex.Message);
+                    SetDownloadVisibility(Visibility.Hidden);
+                    StartButton.IsEnabled = true;
+                });
+            }
+        });
+    }
+
+    private async Task DownloadGame(string url)
     {
         var tempZipPath = Path.Combine(Path.GetTempPath(), "StereoMix.zip");
 
