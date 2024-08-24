@@ -25,6 +25,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
         LauncherVersion.Text = FileHelper.GetLauncherVersion();
+        
+        SetDownloadVisibility(Visibility.Hidden);
 
         EventHelper.BindSnsButtons(this);
         EventHelper.CheckGameEvents(this);
