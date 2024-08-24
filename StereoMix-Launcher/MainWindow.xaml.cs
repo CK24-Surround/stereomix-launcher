@@ -1,633 +1,65 @@
 ﻿using System.IO;
-using System.IO.Compression;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Controls;
 using System.Windows.Threading;
-using System.Windows.Media.Animation;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.Reflection;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Animation;
+using System.Diagnostics;
 
 namespace StereoMix_Launcher;
 
-enum DownloadType
-{
-    Game,
-    Launcher
-}
-
 public partial class MainWindow : Window
 {
-    private const string ExtractPath = "./StereoMix";
-    private const string GamePath = $"{ExtractPath}/StereoMix.exe";
-    private const string GameVersionPath = "./Version.json";
-    
-    private const string GameDownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
-    private const string LauncherDownloadUrl = "https://api.github.com/repos/CK24-Surround/stereomix-launcher/releases/latest";
-    
-    private const string EventsUrl = "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
-
-    private const string BaseRawUrl = "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
-    private const string RawBackgroundImage = $"{BaseRawUrl}/resources/Background.png?raw=true";
-    private const string RawGradientBackgroundImage = $"{BaseRawUrl}/resources/GradientBackground.png?raw=true";
-    
-    private DateTime _lastUpdateTime;
-    private long _lastBytesReceived;
-    
-    private DispatcherTimer _eventTimer = new();
-    private readonly List<BitmapImage> _bannerImages = new();
-    private readonly List<string> _bannerUrls = new();
-    private int _currentBannerIndex;
+    public string InstallDirectory => AppDomain.CurrentDomain.BaseDirectory;
+    public string GamePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix.exe");
+    public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
+    public string LauncherDownloadUrl => "https://api.github.com/repos/CK24-Surround/stereomix-launcher/releases/latest";
+    public string GameDownloadUrl => "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
+    public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
+    public string BaseRawUrl => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
+    public string RawBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
+    public string RawGradientBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/GradientBackground.png?raw=true";
 
     public MainWindow()
     {
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
-        LauncherVersion.Text = GetLauncherVersion();
-        
-        BindSnsButtons();
-        CheckGameEvents();
-        CheckGameInstallation();
-        FetchBackgroundImage();
+        LauncherVersion.Text = FileHelper.GetLauncherVersion();
+
+        EventHelper.BindSnsButtons(this);
+        EventHelper.CheckGameEvents(this);
+        FileHelper.CheckGameInstallation(this);
+        ImageHelper.FetchBackgroundImage(this);
+    }
+
+    private void StartButton_Click(object sender, RoutedEventArgs e)
+    {
+        FileHelper.HandleStartButtonClick(this);
     }
     
-    private string GetLauncherVersion()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        var attribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-        return attribute != null ? attribute.InformationalVersion : "Unknown Version";
-    }
-
-    private async void FetchBackgroundImage()
-    {
-        var backgroundImageUri = new Uri(RawBackgroundImage);
-        var gradientBackgroundImageUri = new Uri(RawGradientBackgroundImage);
-        
-        try
-        {
-            var backgroundImage = await DownloadImageAsync(backgroundImageUri);
-            BackgroundImage.Source = backgroundImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
-        }
-        catch
-        {
-            BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
-        }
-
-        try
-        {
-            var gradientImage = await DownloadImageAsync(gradientBackgroundImageUri);
-            GradientBackgroundImage.Source = gradientImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
-        }
-        catch
-        {
-            GradientBackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
-        }
-    }
-
-    private async Task<BitmapImage?> DownloadImageAsync(Uri uri)
-    {
-        using var client = new HttpClient();
-        try
-        {
-            var imageData = await client.GetByteArrayAsync(uri);
-            using var stream = new MemoryStream(imageData);
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.StreamSource = stream;
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.EndInit();
-            bitmap.Freeze();
-            return bitmap;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private void BindSnsButtons()
-    {
-        XButton.Click += (_, _) => OpenUrl("https://x.com/StereomixGame");
-        DiscordButton.Click += (_, _) => OpenUrl("https://discord.gg/bPCr4sy7QR");
-        GithubButton.Click += (_, _) => OpenUrl("https://github.com/CK24-Surround");
-    }
-
-    private async void CheckGameEvents()
-    {
-#if DEBUG
-        var events = await LoadEventsFromFile("../../../events/events.json");
-#else
-        var events = await GetValueFromUrl(EventsUrl);
-#endif
-        if (string.IsNullOrEmpty(events))
-        {
-            ShowError("Fail to get events.json");
-            return;
-        }
-
-        var json = JsonSerializer.Deserialize<JsonDocument>(events);
-        if (json == null)
-        {
-            ShowError("Fail to deserialize events.json");
-            return;
-        }
-
-        _eventTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(10)
-        };
-        _eventTimer.Tick += OnEventTimerTick;
-        _eventTimer.Start();
-        
-        EventBanner.Click += (_, _) => OpenUrl(_bannerUrls[_currentBannerIndex]);
-        
-        DisplayEvents(json);
-    }
-    
-    private void OnEventTimerTick(object? sender, EventArgs e)
-    {
-        var oldIndex = _currentBannerIndex;
-        _currentBannerIndex = (_currentBannerIndex + 1) % _bannerImages.Count;
-        if (oldIndex != _currentBannerIndex)
-        {
-            UpdateBanner();
-        }
-    }
-
-    private async Task<string> LoadEventsFromFile(string filePath)
-    {
-        try
-        {
-            return await File.ReadAllTextAsync(filePath);
-        }
-        catch (Exception ex)
-        {
-            ShowError(ex.Message);
-            return string.Empty;
-        }
-    }
-
-    private void DisplayEvents(JsonDocument json)
-    {
-        foreach (var (element, index) in json.RootElement.GetProperty("Images").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
-        {
-            var source = element.GetProperty("Source").GetString();
-            var date = element.GetProperty("Date");
-            var formattedDate = $"{date.GetProperty("Month").GetInt32()}/{date.GetProperty("Day").GetInt32()}";
-            var action = element.GetProperty("Action").GetString();
-            var url = element.GetProperty("Url").GetString();
-            
-            if (action == "OpenUrl")
-            {
-                AddEventBanner(source, formattedDate, url, index);
-            }
-        }
-
-        foreach (var (element, index) in json.RootElement.GetProperty("Links").GetProperty("Events").EnumerateArray().Select((e, i) => (e, i)))
-        {
-            if (index + 1 > 3)
-            {
-                break;
-            }
-
-            var title = element.GetProperty("Text").GetString();
-            var date = element.GetProperty("Date");
-            var formattedDate = $"{date.GetProperty("Month").GetInt32()}/{date.GetProperty("Day").GetInt32()}";
-            var action = element.GetProperty("Action").GetString();
-            var url = element.GetProperty("Url").GetString();
-
-            if (action == "OpenUrl")
-            {
-                CreateEventButton(title, formattedDate, url, index);
-            }
-        }
-    }
-    
-    private void UpdateBanner()
-    {
-        var bannerImage = _bannerImages[_currentBannerIndex];
-        AnimateBannerChange(bannerImage);
-    }
-    
-    private void AnimateBannerChange(BitmapImage newImage)
-    {
-        var fadeOut = new DoubleAnimation(0, TimeSpan.FromSeconds(0.3));
-        var fadeIn = new DoubleAnimation(1, TimeSpan.FromSeconds(0.3));
-
-        fadeOut.Completed += (_, _) =>
-        {
-            EventBannerImage.Source = newImage;
-            EventBannerImage.BeginAnimation(OpacityProperty, fadeIn);
-        };
-
-        EventBannerImage.BeginAnimation(OpacityProperty, fadeOut);
-    }
-    
-    private async void AddEventBanner(string? source, string? date, string? url, int index)
-    {
-        try
-        {
-            if (source == null)
-            {
-                _bannerImages.Add(new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png")));
-                return;
-            }
-
-            var uri = new Uri($"{BaseRawUrl}/{source}?raw=true");
-            var bannerImage = await DownloadImageAsync(uri) ?? new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
-            _bannerImages.Add(bannerImage);
-            _bannerUrls.Add(url ?? string.Empty);
-            
-            if (index == 0)
-            {
-                UpdateBanner();
-            }
-        }
-        catch
-        {
-            EventBannerImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/ImageLoadFailed.png"));
-        }
-    }
-
-    private void CreateEventButton(string? title, string? date, string? url, int index)
-    {
-        var buttonLink = new Button
-        {
-            Style = (Style)FindResource("LinkButtonStyle"),
-            Content = title
-        };
-        Grid.SetRow(buttonLink, index);
-        buttonLink.Click += (_, _) => OpenUrl(url);
-        EventLink.Children.Add(buttonLink);
-        
-        var buttonDate = new Button
-        {
-            Style = (Style)FindResource("BaseLinkButtonStyle"),
-            Content = date
-        };
-        Grid.SetRow(buttonDate, index);
-        EventLinkDate.Children.Add(buttonDate);
-    }
-
-    private async void CheckGameInstallation()
-    {
-        StartButton.IsEnabled = false;
-        
-        if (await GetLatestTagFromGitHub(LauncherDownloadUrl) != GetLauncherVersion())
-        {
-            StartButton.Content = "런처 업데이트";
-            StartButton.IsEnabled = true;
-            return;
-        }
-        
-        if (!File.Exists(GamePath) || !File.Exists(GameVersionPath))
-        {
-            StartButton.Content = "게임 설치";
-            StartButton.IsEnabled = true;
-            return;
-        }
-
-        var version = await ReadVersionFromFile();
-        if (version == null)
-        {
-            StartButton.Content = "게임 설치";
-            StartButton.IsEnabled = true;
-            return;
-        }
-
-        var latestVersion = await GetLatestTagFromGitHub(GameDownloadUrl);
-        StartButton.Content = latestVersion == version ? "게임 실행" : "게임 업데이트";
-        StartButton.IsEnabled = true;
-    }
-
-    private async void StartButton_Click(object sender, RoutedEventArgs e)
-    {
-        StartButton.IsEnabled = false;
-
-        if (await GetLatestTagFromGitHub(LauncherDownloadUrl) != GetLauncherVersion())
-        {
-            StartButton.Content = "런처 업데이트";
-            await DownloadLatest(LauncherDownloadUrl, DownloadType.Launcher);
-            return;
-        }
-
-        if (!File.Exists(GamePath) || !File.Exists(GameVersionPath))
-        {
-            StartButton.Content = "게임 설치";
-            await DownloadLatest(GameDownloadUrl, DownloadType.Game);
-            return;
-        }
-
-        var version = await ReadVersionFromFile();
-        if (version == null || await GetLatestTagFromGitHub(GameDownloadUrl) != version)
-        {
-            StartButton.Content = version == null ? "게임 설치" : "게임 업데이트";
-            await DownloadLatest(GameDownloadUrl, DownloadType.Game);
-        }
-        else
-        {
-            StartButton.Content = "게임 실행";
-            LaunchApp(GamePath);
-        }
-    }
-
-    private void LaunchApp(string path)
-    {
-        var processStartInfo = new ProcessStartInfo(path);
-        try
-        {
-            Process.Start(processStartInfo);
-            Environment.Exit(0);
-        }
-        catch (Win32Exception error)
-        {
-            ShowError(error.Message);
-        }
-    }
-
-    private async Task DownloadLatest(string url, DownloadType type)
-    {
-        SetDownloadVisibility(Visibility.Visible);
-
-        var assetUrl = string.Empty;
-        switch (type)
-        {
-            case DownloadType.Game: 
-                assetUrl = await GetDownloadUrl(url, "zip");
-                break;
-            case DownloadType.Launcher:
-                assetUrl = await GetDownloadUrl(url, "exe");
-                break;
-        }
-        
-        if (!string.IsNullOrEmpty(assetUrl))
-        {
-            switch (type)
-            {
-                case DownloadType.Game:
-                    await DownloadGame(assetUrl);
-                    break;
-                case DownloadType.Launcher:
-                    await DownloadLauncher(assetUrl);
-                    break;
-            }
-        }
-        else
-        {
-            ShowError("Fail to fetch Download Url.");
-        }
-    }
-
-    private async Task<string?> ReadVersionFromFile()
-    {
-        try
-        {
-            var versionJson = await File.ReadAllTextAsync(GameVersionPath);
-            return JsonSerializer.Deserialize<JsonDocument>(versionJson)?.RootElement.GetProperty("tag_name").GetString();
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private async Task<string?> GetLatestTagFromGitHub(string url)
-    {
-        return await GetValueFromUrl(url, "tag_name");
-    }
-
-    private void SaveJsonToFile(string? jsonContent, string filePath)
-    {
-        try
-        {
-            File.WriteAllText(filePath, jsonContent);
-        }
-        catch (Exception ex)
-        {
-            ShowError(ex.Message);
-        }
-    }
-    
-    private async Task<string?> GetDownloadUrl(string url, string format)
-    {
-        var taskResult = await GetValueFromUrl(url, "assets");
-        if (taskResult == null)
-        {
-            return string.Empty;
-        }
-
-        var assets = JsonSerializer.Deserialize<JsonDocument>(taskResult);
-        if (assets == null)
-        {
-            return string.Empty;
-        }
-
-        foreach (var asset in assets.RootElement.EnumerateArray().Where(a => a.GetProperty("name").GetString()?.EndsWith($".{format}") == true))
-        {
-            return asset.GetProperty("browser_download_url").GetString();
-        }
-
-        return string.Empty;
-    }
-    
-    private async Task SaveVersion()
-    {
-        await GetValueFromUrl(GameDownloadUrl).ContinueWith(task =>
-        {
-            if (task.Result != null)
-            {
-                SaveJsonToFile(task.Result, GameVersionPath);
-            }
-        });
-    }
-
-    private async Task<string?> GetValueFromUrl(string url, string propertyName = "")
-    {
-        using var client = CreateHttpClient();
-        try
-        {
-            var response = await client.GetFromJsonAsync<JsonDocument>(url);
-            if (string.IsNullOrEmpty(propertyName))
-            {
-                return response?.RootElement.ToString();
-            }
-            return response?.RootElement.GetProperty(propertyName).ToString();
-        }
-        catch (Exception ex)
-        {
-            ShowError(ex.Message);
-        }
-        return string.Empty;
-    }
-
-    private static HttpClient CreateHttpClient()
-    {
-        var client = new HttpClient();
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-        return client;
-    }
-    
-    private async Task DownloadLauncher(string url)
-    {
-        var downloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix-Launcher-Installer.exe");
-        
-        await Task.Run(async () =>
-        {
-            using var client = CreateHttpClient();
-            try
-            {
-                var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
-
-                await SaveToFile(response, downloadPath);
-
-                Dispatcher.Invoke(() =>
-                {
-                    SetDownloadVisibility(Visibility.Hidden);
-                    LaunchApp(downloadPath);
-                });
-            }
-            catch (Exception ex)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    ShowError(ex.Message);
-                    SetDownloadVisibility(Visibility.Hidden);
-                    StartButton.IsEnabled = true;
-                });
-            }
-        });
-    }
-
-    private async Task DownloadGame(string url)
-    {
-        var tempZipPath = Path.Combine(Path.GetTempPath(), "StereoMix.zip");
-
-        await Task.Run(async () =>
-        {
-            using var client = CreateHttpClient();
-            try
-            {
-                var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
-
-                await SaveToFile(response, tempZipPath);
-                ExtractZip(tempZipPath);
-                
-                await SaveVersion();
-
-                Dispatcher.Invoke(() =>
-                {
-                    SetDownloadVisibility(Visibility.Hidden);
-                    StartButton.Content = "게임 실행";
-                    StartButton.IsEnabled = true;
-                });
-            }
-            catch (Exception ex)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    ShowError(ex.Message);
-                    SetDownloadVisibility(Visibility.Hidden);
-                    StartButton.IsEnabled = true;
-                });
-            }
-            finally
-            {
-                if (File.Exists(tempZipPath))
-                {
-                    File.Delete(tempZipPath);
-                }
-            }
-        });
-    }
-
-    private async Task SaveToFile(HttpResponseMessage response, string path)
-    {
-        await using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        var contentStream = await response.Content.ReadAsStreamAsync();
-        var buffer = new byte[8192];
-        int bytesRead;
-        long totalRead = 0;
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-        {
-            await fs.WriteAsync(buffer, 0, bytesRead);
-            totalRead += bytesRead;
-            UpdateProgress(totalRead, response.Content.Headers.ContentLength ?? 1L);
-        }
-    }
-
-    private void ExtractZip(string zipPath)
-    {
-        if (Directory.Exists(ExtractPath))
-        {
-            Directory.Delete(ExtractPath, true);
-        }
-
-        ZipFile.ExtractToDirectory(zipPath, ExtractPath);
-    }
-
-    private void UpdateProgress(long bytesReceived, long totalBytes)
-    {
-        Dispatcher.Invoke(() =>
-        {
-            var now = DateTime.Now;
-            var timeSinceLastUpdate = now - _lastUpdateTime;
-            
-            if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
-            {
-                _lastUpdateTime = now;
-                _lastBytesReceived = bytesReceived;
-            }
-
-            var bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
-            var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
-
-            var progressPercentage = (double)bytesReceived / totalBytes * 100;
-            DownloadProgressBar.Value = progressPercentage;
-            DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
-        }, DispatcherPriority.Background);
-    }
-
-    private void SetDownloadVisibility(Visibility visibility)
-    {
-        DownloadProgressBar.Visibility = visibility;
-        DownloadProgressText.Visibility = visibility;
-    }
-
-    private void ShowError(string message)
-    {
-        MessageBox.Show($"Error: {message}");
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        AnimateWindowOpacity(0, Close);
-    }
-
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         DragMove();
     }
-
+    
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
         AnimateWindowHeight(0, () => WindowState = WindowState.Minimized);
+    }
+    
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        AnimateWindowOpacity(0, Close);
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
     {
         if (WindowState == WindowState.Normal)
         {
-            AnimateWindowHeight(700, () => { });
+            AnimateWindowHeight(700);
         }
     }
-
+    
     private void AnimateWindowOpacity(double to, Action? onCompleted = null)
     {
         var storyboard = new Storyboard();
@@ -668,19 +100,56 @@ public partial class MainWindow : Window
         storyboard.Begin();
     }
 
-    private void OpenUrl(string? url)
+    public void AnimateBannerChange(BitmapImage newImage)
     {
-        try
+        var fadeOutAnimation = new DoubleAnimation(0, TimeSpan.FromMilliseconds(500));
+        fadeOutAnimation.Completed += (_, _) =>
         {
-            if (string.IsNullOrEmpty(url))
+            EventBannerImage.Source = newImage;
+            var fadeInAnimation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(500));
+            EventBanner.BeginAnimation(OpacityProperty, fadeInAnimation);
+        };
+        EventBanner.BeginAnimation(OpacityProperty, fadeOutAnimation);
+    }
+    
+    private DateTime _lastUpdateTime;
+    private long _lastBytesReceived;
+    public void UpdateProgress(long bytesReceived, long totalBytes)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var now = DateTime.Now;
+            var timeSinceLastUpdate = now - _lastUpdateTime;
+            
+            if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
             {
-                return;
+                _lastUpdateTime = now;
+                _lastBytesReceived = bytesReceived;
             }
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch (Win32Exception error)
+            
+            var bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
+            var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
+            
+            var progressPercentage = (double)bytesReceived / totalBytes * 100;
+            DownloadProgressBar.Value = progressPercentage;
+            DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
+        }, DispatcherPriority.Background);
+    }
+    
+    public void SetDownloadVisibility(Visibility visibility)
+    {
+        DownloadProgressBar.Visibility = visibility;
+        DownloadProgressText.Visibility = visibility;
+        
+        if (visibility == Visibility.Visible)
         {
-            ShowError(error.Message);
+            DownloadProgressBar.Value = 0;
+            DownloadProgressText.Text = "0 MB/s (0%)";
         }
+    }
+    
+    public void RunProcess(string path)
+    {
+        Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
     }
 }
