@@ -10,7 +10,7 @@ namespace StereoMix_Launcher;
 
 public partial class MainWindow : Window
 {
-    public string InstallDirectory => AppDomain.CurrentDomain.BaseDirectory;
+    public string InstallDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix");
     public string GamePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix.exe");
     public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
     public string LauncherDownloadUrl => "https://api.github.com/repos/CK24-Surround/stereomix-launcher/releases/latest";
