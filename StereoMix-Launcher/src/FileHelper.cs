@@ -19,28 +19,46 @@ public static class FileHelper
     public static async void CheckGameInstallation(MainWindow window)
     {
         window.StartButton.IsEnabled = false;
-        
-        if (await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl) != GetLauncherVersion())
+
+        try
         {
-            window.StartButton.Content = "런처 업데이트";
-            window.StartButton.IsEnabled = true;
-            return;
+            var localLauncherVersion = GetLauncherVersion();
+            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl);
+            if (localLauncherVersion != remoteLauncherVersion)
+            {
+                if (string.IsNullOrEmpty(remoteLauncherVersion))
+                {
+                    throw new Exception("Fail to get latest launcher version.");
+                }
+                window.StartButton.Content = "런처 업데이트";
+                window.StartButton.IsEnabled = true;
+                return;
+            }
+        
+            if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
+            {
+                window.StartButton.Content = "게임 설치";
+                window.StartButton.IsEnabled = true;
+                return;
+            }
+        
+            var localVersion = await GetLocalGameVersion(window.GameVersionPath);
+            var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.GameDownloadUrl);
+            if (localVersion != remoteVersion)
+            {
+                if (string.IsNullOrEmpty(remoteVersion))
+                {
+                    throw new Exception("Fail to get latest game version.");
+                }
+                window.StartButton.Content = "게임 업데이트";
+                window.StartButton.IsEnabled = true;
+                return;
+            }
         }
-        
-        if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
+        catch (Exception e)
         {
-            window.StartButton.Content = "게임 설치";
-            window.StartButton.IsEnabled = true;
-            return;
-        }
-        
-        var localVersion = await GetLocalGameVersion(window.GameVersionPath);
-        var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.GameDownloadUrl);
-        if (localVersion != remoteVersion)
-        {
-            window.StartButton.Content = "게임 업데이트";
-            window.StartButton.IsEnabled = true;
-            return;
+            MessageBox.Show($"Error: {e.Message}");
+            throw;
         }
         
         window.StartButton.Content = "게임 실행";
@@ -65,33 +83,54 @@ public static class FileHelper
     public static async void HandleStartButtonClick(MainWindow window)
     {
         window.StartButton.IsEnabled = false;
-        
-        if (await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl) != GetLauncherVersion())
+
+        try
         {
-            window.StartButton.Content = "런처 업데이트";
-            await DownloadAsset(window, DownloadType.Launcher);
-            return;
+            var localLauncherVersion = GetLauncherVersion();
+            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl);
+            if (localLauncherVersion != remoteLauncherVersion)
+            {
+                if (string.IsNullOrEmpty(remoteLauncherVersion))
+                {
+                    throw new Exception("Fail to get latest launcher version.");
+                }
+                window.StartButton.Content = "런처 업데이트";
+                await DownloadAsset(window, DownloadType.Launcher);
+                return;
+            }
+        
+            if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
+            {
+                window.StartButton.Content = "게임 설치";
+                await DownloadAsset(window, DownloadType.Game);
+                return;
+            }
+        
+            var localVersion = await GetLocalGameVersion(window.GameVersionPath);
+            var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.GameDownloadUrl);
+            if (localVersion != remoteVersion)
+            {
+                if (string.IsNullOrEmpty(remoteVersion))
+                {
+                    throw new Exception("Fail to get latest game version.");
+                }
+                window.StartButton.Content = "게임 업데이트";
+                await DownloadAsset(window, DownloadType.Game);
+                return;
+            }
         }
-        
-        if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
+        catch (Exception e)
         {
-            window.StartButton.Content = "게임 설치";
-            await DownloadAsset(window, DownloadType.Game);
-            return;
-        }
-        
-        var localVersion = await GetLocalGameVersion(window.GameVersionPath);
-        var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.GameDownloadUrl);
-        if (localVersion != remoteVersion)
-        {
-            window.StartButton.Content = "게임 업데이트";
-            await DownloadAsset(window, DownloadType.Game);
-            return;
+            MessageBox.Show($"Error: {e.Message}");
+            throw;
         }
 
         window.StartButton.Content = "게임 실행";
-        window.RunProcess(window.GamePath);
-        Application.Current.Shutdown();
+        window.RunProcess(window.GamePath, window.Hide, () =>
+        {
+            window.Show();
+            CheckGameInstallation(window);
+        });
     }
 
     private static async Task DownloadAsset(MainWindow window, DownloadType type)
@@ -169,8 +208,7 @@ public static class FileHelper
                 await HttpHelper.SaveToFile(window, response, fileStream);
             });
 
-            window.RunProcess(tempFile);
-            Application.Current.Shutdown();
+            window.RunProcess(tempFile, Application.Current.Shutdown);
         }
         catch (Exception e)
         {
