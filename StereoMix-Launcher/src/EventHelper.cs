@@ -71,7 +71,7 @@ public static class EventHelper
             };
             Grid.SetRow(buttonLink, index);
             buttonLink.Click += (_, _) => window.RunProcess(url);
-            window.EventLink.Children.Add(buttonLink);
+            window.EventLinkTitle.Children.Add(buttonLink);
         
             var buttonDate = new Button
             {
