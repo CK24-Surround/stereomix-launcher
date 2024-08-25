@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         Storyboard.SetTarget(animation, this);
         Storyboard.SetTargetProperty(animation, new PropertyPath(OpacityProperty));
         storyboard.Children.Add(animation);
-        storyboard.Completed += (_, _) => onCompleted?.Invoke();
+        storyboard.Completed += (_, _) => Application.Current.Dispatcher.Invoke(() => onCompleted?.Invoke());
         storyboard.Begin();
     }
 
@@ -98,7 +98,7 @@ public partial class MainWindow : Window
         Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(OpacityProperty));
         storyboard.Children.Add(opacityAnimation);
 
-        storyboard.Completed += (_, _) => onCompleted?.Invoke();
+        storyboard.Completed += (_, _) => Application.Current.Dispatcher.Invoke(() => onCompleted?.Invoke());
         storyboard.Begin();
     }
 
@@ -118,7 +118,7 @@ public partial class MainWindow : Window
     private long _lastBytesReceived;
     public void UpdateProgress(long bytesReceived, long totalBytes)
     {
-        Dispatcher.Invoke(() =>
+        Dispatcher.BeginInvoke(new Action(() =>
         {
             var now = DateTime.Now;
             var timeSinceLastUpdate = now - _lastUpdateTime;
@@ -135,7 +135,7 @@ public partial class MainWindow : Window
             var progressPercentage = (double)bytesReceived / totalBytes * 100;
             DownloadProgressBar.Value = progressPercentage;
             DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
-        }, DispatcherPriority.Background);
+        }), DispatcherPriority.Background);
     }
     
     public void SetDownloadVisibility(Visibility visibility)
@@ -150,8 +150,25 @@ public partial class MainWindow : Window
         }
     }
     
-    public void RunProcess(string path)
+    public void RunProcess(string path, Action? onCompleted = null, Action? onExited = null)
     {
-        Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            },
+            EnableRaisingEvents = true
+        };
+        
+        process.Exited += (_, _) =>
+        {
+            Application.Current.Dispatcher.Invoke(() => onExited?.Invoke());
+        };
+        
+        process.Start();
+        
+        Application.Current.Dispatcher.Invoke(() => onCompleted?.Invoke());
     }
 }

@@ -4,14 +4,11 @@
 ```bash
 dotnet publish -c Release -r win-x64
 ```
-or
-```bash
-.\Build.bat
-```
 
 ### How to build StereoMix Launcher Installer
 - Download and install [Inno Setup](http://www.jrsoftware.org/isdl.php)
 - Open `StereoMix-Launcher.iss` with Inno Setup
+- Change the `MyAppVersion` to the current version
 - Click on `Build` > `Compile`
 - The installer will be created in the `Output` folder
 
