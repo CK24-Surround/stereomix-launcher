@@ -68,9 +68,9 @@ public static class HttpHelper
         var buffer = new byte[8192];
         int bytesRead;
         long totalRead = 0;
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
         {
-            await fs.WriteAsync(buffer, 0, bytesRead);
+            await fs.WriteAsync(buffer.AsMemory(0, bytesRead));
             totalRead += bytesRead;
             window.UpdateProgress(totalRead, response.Content.Headers.ContentLength ?? 1L);
         }
