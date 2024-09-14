@@ -138,18 +138,6 @@ public static class FileHelper
         window.StartButton.IsEnabled = false;
         window.SetDownloadVisibility(Visibility.Visible);
 
-        var assetUrl = type == DownloadType.Game 
-            ? await HttpHelper.GetDownloadUrl(window.GameDownloadUrl, ".zip") 
-            : await HttpHelper.GetDownloadUrl(window.LauncherDownloadUrl, ".exe");
-
-        if (string.IsNullOrEmpty(assetUrl))
-        {
-            MessageBox.Show($"Error: {nameof(type)} download URL not found.");
-            window.SetDownloadVisibility(Visibility.Hidden);
-            CheckGameInstallation(window);
-            return;
-        }
-
         switch (type)
         {
             case DownloadType.Game:
@@ -189,6 +177,7 @@ public static class FileHelper
         catch (Exception e)
         {
             MessageBox.Show($"Error: {e.Message}");
+            window.SetDownloadVisibility(Visibility.Hidden);
             CheckGameInstallation(window);
         }
     }
@@ -213,6 +202,7 @@ public static class FileHelper
         catch (Exception e)
         {
             MessageBox.Show($"Error: {e.Message}");
+            window.SetDownloadVisibility(Visibility.Hidden);
             CheckGameInstallation(window);
         }
     }
