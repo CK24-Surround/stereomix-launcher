@@ -13,12 +13,20 @@ public partial class MainWindow : Window
     public string InstallDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix");
     public string GamePath => Path.Combine(InstallDirectory, "StereoMix.exe");
     public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
-    public string LauncherDownloadUrl => "https://api.github.com/repos/CK24-Surround/stereomix-launcher/releases/latest";
-    public string GameDownloadUrl => "https://api.github.com/repos/CK24-Surround/stereomix/releases/latest";
+    
+#if DEBUG
+    public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
+    public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
+    public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
+#else
+    public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
+    public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
+    public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
+#endif
+    
     public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
     public string BaseRawUrl => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
     public string RawBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
-    public string RawGradientBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/GradientBackground.png?raw=true";
 
     public MainWindow()
     {

@@ -36,24 +36,18 @@ public static class HttpHelper
 
     public static async Task<string?> GetLatestTagFromGitHub(string url)
     {
-        return await GetValueFromUrl(url, "tag_name");
+        return await GetValueFromUrl(url, "versionName");
     }
 
-    public static async Task<string?> GetDownloadUrl(string url, string extension)
+    public static async Task<string?> GetDownloadUrl(string downloadUrl, string url)
     {
         using var client = CreateHttpClient();
         try
         {
             var response = await client.GetFromJsonAsync<JsonDocument>(url);
-            var assets = response?.RootElement.GetProperty("assets").EnumerateArray();
-            foreach (var asset in assets!)
-            {
-                var browserDownloadUrl = asset.GetProperty("browser_download_url").ToString();
-                if (browserDownloadUrl.EndsWith(extension))
-                {
-                    return browserDownloadUrl;
-                }
-            }
+            var id = response?.RootElement.GetProperty("id").ToString();
+            var downloadUrlResponse = await client.GetFromJsonAsync<string>($"{downloadUrl}/{id}");
+            return downloadUrlResponse;
         }
         catch (Exception ex)
         {

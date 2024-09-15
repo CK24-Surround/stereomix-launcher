@@ -71,7 +71,7 @@ public static class FileHelper
         {
             var json = await File.ReadAllTextAsync(path);
             var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("tag_name").ToString();
+            return doc.RootElement.GetProperty("versionName").ToString();
         }
         catch (Exception ex)
         {
@@ -162,7 +162,7 @@ public static class FileHelper
             await Task.Run(async () =>
             {
                 var client = HttpHelper.CreateHttpClient();
-                var downloadUrl = await HttpHelper.GetDownloadUrl(window.GameDownloadUrl, ".zip");
+                var downloadUrl = await HttpHelper.GetDownloadUrl(window.BaseDownloadUrl, window.GameDownloadUrl);
                 using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
                 await using var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -190,7 +190,7 @@ public static class FileHelper
             await Task.Run(async () =>
             {
                 var client = HttpHelper.CreateHttpClient();
-                var downloadUrl = await HttpHelper.GetDownloadUrl(window.LauncherDownloadUrl, ".exe");
+                var downloadUrl = await HttpHelper.GetDownloadUrl(window.BaseDownloadUrl, window.LauncherDownloadUrl);
                 using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
                 await using var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);

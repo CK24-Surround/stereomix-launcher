@@ -29,7 +29,6 @@ public static class ImageHelper
     public static async void FetchBackgroundImage(MainWindow window)
     {
         var backgroundImageUri = new Uri(window.RawBackgroundImage);
-        var gradientBackgroundImageUri = new Uri(window.RawGradientBackgroundImage);
 
         try
         {
@@ -39,16 +38,6 @@ public static class ImageHelper
         catch
         {
             window.BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
-        }
-
-        try
-        {
-            var gradientImage = await DownloadImageAsync(gradientBackgroundImageUri);
-            window.GradientBackgroundImage.Source = gradientImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
-        }
-        catch
-        {
-            window.GradientBackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/GradientBackground.png"));
         }
     }
 }
