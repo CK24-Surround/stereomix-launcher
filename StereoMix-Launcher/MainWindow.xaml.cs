@@ -19,9 +19,9 @@ public partial class MainWindow : Window
     public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
     public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
 #else
-    public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
-    public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
-    public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
+    public string BaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/download";
+    public string LauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/launcher/latest";
+    public string GameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/game/latest";
 #endif
     
     public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";

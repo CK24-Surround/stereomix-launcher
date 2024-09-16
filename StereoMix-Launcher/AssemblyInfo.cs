@@ -6,4 +6,4 @@ using System.Reflection;
     ResourceDictionaryLocation.SourceAssembly
 )]
 
-[assembly: AssemblyInformationalVersion("1.1.3")]
+[assembly: AssemblyInformationalVersion("1.1.4")]
