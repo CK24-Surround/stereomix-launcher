@@ -14,14 +14,24 @@ public partial class MainWindow : Window
     public string GamePath => Path.Combine(InstallDirectory, "StereoMix.exe");
     public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
     
+    public string DevInstallDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMixDev");
+    public string DevGamePath => Path.Combine(DevInstallDirectory, "StereoMix.exe");
+    public string DevGameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DevVersion.json");
+    
 #if DEBUG
     public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
-    public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
+    public string LauncherDownloadUrl => "http://localhost:15600/dev/version/launcher/latest";
     public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
+    public string DevBaseDownloadUrl => "http://localhost:15600/dev/version/download";
+    public string DevLauncherDownloadUrl => "http://localhost:15600/dev/version/launcher/latest";
+    public string DevGameDownloadUrl => "http://localhost:15600/dev/version/game/latest";
 #else
     public string BaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/download";
-    public string LauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/launcher/latest";
+    public string LauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/launcher/latest";
     public string GameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/game/latest";
+    public string DevBaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/download";
+    public string DevLauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/launcher/latest";
+    public string DevGameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/game/latest";
 #endif
     
     public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
@@ -35,16 +45,23 @@ public partial class MainWindow : Window
         LauncherVersion.Text = FileHelper.GetLauncherVersion();
         
         SetDownloadVisibility(Visibility.Hidden);
+        DevSetDownloadVisibility(Visibility.Hidden);
 
         EventHelper.BindSnsButtons(this);
         EventHelper.CheckGameEvents(this);
         FileHelper.CheckGameInstallation(this);
+        FileHelper.DevCheckGameInstallation(this);
         ImageHelper.FetchBackgroundImage(this);
     }
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
         FileHelper.HandleStartButtonClick(this);
+    }
+    
+    private void DevStartButton_Click(object sender, RoutedEventArgs e)
+    {
+        FileHelper.DevHandleStartButtonClick(this);
     }
     
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -146,6 +163,30 @@ public partial class MainWindow : Window
         }), DispatcherPriority.Background);
     }
     
+    private DateTime _devLastUpdateTime;
+    private long _devLastBytesReceived;
+    public void DevUpdateProgress(long bytesReceived, long totalBytes)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var now = DateTime.Now;
+            var timeSinceLastUpdate = now - _devLastUpdateTime;
+            
+            if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
+            {
+                _devLastUpdateTime = now;
+                _devLastBytesReceived = bytesReceived;
+            }
+            
+            var bytesSinceLastUpdate = bytesReceived - _devLastBytesReceived;
+            var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
+            
+            var progressPercentage = (double)bytesReceived / totalBytes * 100;
+            DownloadProgressBarDev.Value = progressPercentage;
+            DownloadProgressTextDev.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
+        }), DispatcherPriority.Background);
+    }
+    
     public void SetDownloadVisibility(Visibility visibility)
     {
         DownloadProgressBar.Visibility = visibility;
@@ -155,6 +196,18 @@ public partial class MainWindow : Window
         {
             DownloadProgressBar.Value = 0;
             DownloadProgressText.Text = "0 MB/s (0%)";
+        }
+    }
+    
+    public void DevSetDownloadVisibility(Visibility visibility)
+    {
+        DownloadProgressBarDev.Visibility = visibility;
+        DownloadProgressTextDev.Visibility = visibility;
+        
+        if (visibility == Visibility.Visible)
+        {
+            DownloadProgressBarDev.Value = 0;
+            DownloadProgressTextDev.Text = "0 MB/s (0%)";
         }
     }
     

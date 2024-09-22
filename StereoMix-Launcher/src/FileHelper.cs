@@ -22,19 +22,6 @@ public static class FileHelper
 
         try
         {
-            var localLauncherVersion = GetLauncherVersion();
-            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl);
-            if (localLauncherVersion != remoteLauncherVersion)
-            {
-                if (string.IsNullOrEmpty(remoteLauncherVersion))
-                {
-                    throw new Exception("Fail to get latest launcher version.");
-                }
-                window.StartButton.Content = "런처 업데이트";
-                window.StartButton.IsEnabled = true;
-                return;
-            }
-        
             if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
             {
                 window.StartButton.Content = "게임 설치";
@@ -64,6 +51,55 @@ public static class FileHelper
         window.StartButton.Content = "게임 실행";
         window.StartButton.IsEnabled = true;
     }
+    
+    public static async void DevCheckGameInstallation(MainWindow window)
+    {
+        window.StartButtonDev.IsEnabled = false;
+
+        try
+        {
+            var localLauncherVersion = GetLauncherVersion();
+            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl);
+            if (localLauncherVersion != remoteLauncherVersion)
+            {
+                if (string.IsNullOrEmpty(remoteLauncherVersion))
+                {
+                    throw new Exception("Fail to get latest launcher version.");
+                }
+                window.StartButtonDev.Content = "Dev 런처 업데이트";
+                window.StartButtonDev.IsEnabled = true;
+                return;
+            }
+        
+            if (!File.Exists(window.DevGameVersionPath) || !File.Exists(window.DevGamePath))
+            {
+                window.StartButtonDev.Content = "Dev 게임 설치";
+                window.StartButtonDev.IsEnabled = true;
+                return;
+            }
+        
+            var localVersion = await GetLocalGameVersion(window.DevGameVersionPath);
+            var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.DevGameDownloadUrl);
+            if (localVersion != remoteVersion)
+            {
+                if (string.IsNullOrEmpty(remoteVersion))
+                {
+                    throw new Exception("Fail to get latest game version.");
+                }
+                window.StartButtonDev.Content = "Dev 게임 업데이트";
+                window.StartButtonDev.IsEnabled = true;
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error: {e.Message}");
+            throw;
+        }
+        
+        window.StartButtonDev.Content = "Dev 게임 실행";
+        window.StartButtonDev.IsEnabled = true;
+    }
 
     private static async Task<string?> GetLocalGameVersion(string path)
     {
@@ -86,19 +122,6 @@ public static class FileHelper
 
         try
         {
-            var localLauncherVersion = GetLauncherVersion();
-            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.LauncherDownloadUrl);
-            if (localLauncherVersion != remoteLauncherVersion)
-            {
-                if (string.IsNullOrEmpty(remoteLauncherVersion))
-                {
-                    throw new Exception("Fail to get latest launcher version.");
-                }
-                window.StartButton.Content = "런처 업데이트";
-                await DownloadAsset(window, DownloadType.Launcher);
-                return;
-            }
-        
             if (!File.Exists(window.GameVersionPath) || !File.Exists(window.GamePath))
             {
                 window.StartButton.Content = "게임 설치";
@@ -132,6 +155,59 @@ public static class FileHelper
             CheckGameInstallation(window);
         });
     }
+    
+    public static async void DevHandleStartButtonClick(MainWindow window)
+    {
+        window.StartButtonDev.IsEnabled = false;
+
+        try
+        {
+            var localLauncherVersion = GetLauncherVersion();
+            var remoteLauncherVersion = await HttpHelper.GetLatestTagFromGitHub(window.DevLauncherDownloadUrl);
+            if (localLauncherVersion != remoteLauncherVersion)
+            {
+                if (string.IsNullOrEmpty(remoteLauncherVersion))
+                {
+                    throw new Exception("Fail to get latest launcher version.");
+                }
+                window.StartButtonDev.Content = "Dev 런처 업데이트";
+                await DevDownloadAsset(window, DownloadType.Launcher);
+                return;
+            }
+        
+            if (!File.Exists(window.DevGameVersionPath) || !File.Exists(window.DevGamePath))
+            {
+                window.StartButtonDev.Content = "Dev 게임 설치";
+                await DevDownloadAsset(window, DownloadType.Game);
+                return;
+            }
+        
+            var localVersion = await GetLocalGameVersion(window.DevGameVersionPath);
+            var remoteVersion = await HttpHelper.GetLatestTagFromGitHub(window.DevGameDownloadUrl);
+            if (localVersion != remoteVersion)
+            {
+                if (string.IsNullOrEmpty(remoteVersion))
+                {
+                    throw new Exception("Fail to get latest game version.");
+                }
+                window.StartButtonDev.Content = "Dev 게임 업데이트";
+                await DevDownloadAsset(window, DownloadType.Game);
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error: {e.Message}");
+            throw;
+        }
+
+        window.StartButtonDev.Content = "Dev 게임 실행";
+        window.RunProcess(window.DevGamePath, window.Hide, () =>
+        {
+            window.Show();
+            DevCheckGameInstallation(window);
+        });
+    }
 
     private static async Task DownloadAsset(MainWindow window, DownloadType type)
     {
@@ -150,6 +226,25 @@ public static class FileHelper
 
         window.SetDownloadVisibility(Visibility.Hidden);
         CheckGameInstallation(window);
+    }
+
+    private static async Task DevDownloadAsset(MainWindow window, DownloadType type)
+    {
+        window.StartButtonDev.IsEnabled = false;
+        window.DevSetDownloadVisibility(Visibility.Visible);
+
+        switch (type)
+        {
+            case DownloadType.Game:
+                await DevDownloadGame(window);
+                break;
+            case DownloadType.Launcher:
+                await DownloadLauncher(window);
+                break;
+        }
+
+        window.DevSetDownloadVisibility(Visibility.Hidden);
+        DevCheckGameInstallation(window);
     }
 
     private static async Task DownloadGame(MainWindow window)
@@ -181,6 +276,36 @@ public static class FileHelper
             CheckGameInstallation(window);
         }
     }
+    
+    private static async Task DevDownloadGame(MainWindow window)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), "StereoMixDev.zip");
+        try
+        {
+            var versionInfo = await HttpHelper.GetValueFromUrl(window.DevGameDownloadUrl);
+            
+            await Task.Run(async () =>
+            {
+                var client = HttpHelper.CreateHttpClient();
+                var downloadUrl = await HttpHelper.GetDownloadUrl(window.DevBaseDownloadUrl, window.DevGameDownloadUrl);
+                using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+                await using var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);
+                await HttpHelper.DevSaveToFile(window, response, fileStream);
+            });
+            
+            ZipFile.ExtractToDirectory(tempFile, window.DevInstallDirectory, true);
+            File.Delete(tempFile);
+            
+            await File.WriteAllTextAsync(window.DevGameVersionPath, versionInfo);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error: {e.Message}");
+            window.DevSetDownloadVisibility(Visibility.Hidden);
+            DevCheckGameInstallation(window);
+        }
+    }
 
     private static async Task DownloadLauncher(MainWindow window)
     {
@@ -194,7 +319,7 @@ public static class FileHelper
                 using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
                 await using var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);
-                await HttpHelper.SaveToFile(window, response, fileStream);
+                await HttpHelper.DevSaveToFile(window, response, fileStream);
             });
 
             window.RunProcess(tempFile, Application.Current.Shutdown);

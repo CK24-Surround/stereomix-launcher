@@ -69,4 +69,18 @@ public static class HttpHelper
             window.UpdateProgress(totalRead, response.Content.Headers.ContentLength ?? 1L);
         }
     }
+    
+    public static async Task DevSaveToFile(MainWindow window, HttpResponseMessage response, FileStream fs)
+    {
+        var contentStream = await response.Content.ReadAsStreamAsync();
+        var buffer = new byte[8192];
+        int bytesRead;
+        long totalRead = 0;
+        while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
+        {
+            await fs.WriteAsync(buffer.AsMemory(0, bytesRead));
+            totalRead += bytesRead;
+            window.DevUpdateProgress(totalRead, response.Content.Headers.ContentLength ?? 1L);
+        }
+    }
 }
