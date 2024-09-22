@@ -1,5 +1,5 @@
-#define MyAppName "StereoMix Launcher"
-#define MyAppVersion "1.1.4"
+#define MyAppName "StereoMix Launcher Dev"
+#define MyAppVersion "24.0922.1"
 #define MyAppPublisher "Surround"
 #define MyAppURL "https://discord.gg/bPCr4sy7QR"
 #define MyAppExeName "StereoMix-Launcher.exe"
@@ -19,7 +19,7 @@ DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputBaseFilename=StereoMix-Launcher-Installer
+OutputBaseFilename=StereoMix-Launcher-Dev-Installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
