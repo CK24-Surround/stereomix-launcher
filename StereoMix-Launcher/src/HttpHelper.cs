@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Text.Json;
 using System.Net.Http;
@@ -68,7 +68,7 @@ public static class HttpHelper
         var buffer = new byte[8192];
         int bytesRead;
         long totalRead = 0;
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        while ((bytesRead = await contentStream.ReadAsync(buffer)) > 0)
         {
             await fs.WriteAsync(buffer, 0, bytesRead);
             totalRead += bytesRead;
