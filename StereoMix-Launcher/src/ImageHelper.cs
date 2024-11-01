@@ -25,19 +25,4 @@ public static class ImageHelper
             return null;
         }
     }
-
-    public static async void FetchBackgroundImage(MainWindow window)
-    {
-        var backgroundImageUri = new Uri(window.RawBackgroundImage);
-
-        try
-        {
-            var backgroundImage = await DownloadImageAsync(backgroundImageUri);
-            window.BackgroundImage.Source = backgroundImage ?? new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
-        }
-        catch
-        {
-            window.BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/resources/Background.png"));
-        }
-    }
 }

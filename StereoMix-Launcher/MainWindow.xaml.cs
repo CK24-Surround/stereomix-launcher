@@ -15,18 +15,17 @@ public partial class MainWindow : Window
     public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
     
 #if DEBUG
-    public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
-    public string LauncherDownloadUrl => "http://localhost:15600/release/version/launcher/latest";
-    public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
+    private string BaseAPIUrl => "http://localhost:15600";
 #else
-    public string BaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/download";
-    public string LauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/launcher/latest";
-    public string GameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/game/latest";
+    private string BaseAPIUrl => "https://stereomix-502920527569.asia-northeast3.run.app";
 #endif
+    
+    public string BaseDownloadUrl => $"{BaseAPIUrl}/release/version/download";
+    public string LauncherDownloadUrl => $"{BaseAPIUrl}/release/version/launcher/latest";
+    public string GameDownloadUrl => $"{BaseAPIUrl}/release/version/game/latest";
     
     public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
     public string BaseRawUrl => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
-    public string RawBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
 
     public MainWindow()
     {
@@ -39,7 +38,6 @@ public partial class MainWindow : Window
         EventHelper.BindSnsButtons(this);
         EventHelper.CheckGameEvents(this);
         FileHelper.CheckGameInstallation(this);
-        ImageHelper.FetchBackgroundImage(this);
     }
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
