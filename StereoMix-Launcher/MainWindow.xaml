@@ -141,11 +141,11 @@
             </Border>
 
             <!-- 로고 이미지 -->
-            <Border Margin="120,20,0,0" Width="180" Style="{StaticResource CommonBorderStyle}">
-                <StackPanel>
-                    <Image RenderOptions.BitmapScalingMode="HighQuality" Source="resources/StereoMix.png"/>
-                </StackPanel>
-            </Border>
+            <!-- <Border Margin="120,20,0,0" Width="180" Style="{StaticResource CommonBorderStyle}"> -->
+            <!--     <StackPanel> -->
+            <!--         <Image RenderOptions.BitmapScalingMode="HighQuality" Source="resources/StereoMix.png"/> -->
+            <!--     </StackPanel> -->
+            <!-- </Border> -->
 
             <!-- 왼쪽 사이드 바 -->
             <Border Height="700" Width="100" CornerRadius="12,0,0,12" HorizontalAlignment="Left" Background="#232323">
