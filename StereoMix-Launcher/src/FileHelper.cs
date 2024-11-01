@@ -66,14 +66,15 @@ public static class FileHelper
                 {
                     throw new Exception("Fail to get latest launcher version.");
                 }
-                window.StartButtonDev.Content = "Dev 런처 업데이트";
+                window.StartButton.Visibility = Visibility.Hidden;
+                window.StartButtonDev.Content = "런처 업데이트";
                 window.StartButtonDev.IsEnabled = true;
                 return;
             }
         
             if (!File.Exists(window.DevGameVersionPath) || !File.Exists(window.DevGamePath))
             {
-                window.StartButtonDev.Content = "Dev 게임 설치";
+                window.StartButtonDev.Content = "개발 빌드 설치";
                 window.StartButtonDev.IsEnabled = true;
                 return;
             }
@@ -86,7 +87,7 @@ public static class FileHelper
                 {
                     throw new Exception("Fail to get latest game version.");
                 }
-                window.StartButtonDev.Content = "Dev 게임 업데이트";
+                window.StartButtonDev.Content = "개발 빌드 업데이트";
                 window.StartButtonDev.IsEnabled = true;
                 return;
             }
@@ -97,7 +98,7 @@ public static class FileHelper
             throw;
         }
         
-        window.StartButtonDev.Content = "Dev 게임 실행";
+        window.StartButtonDev.Content = "개발 빌드 실행";
         window.StartButtonDev.IsEnabled = true;
     }
 
@@ -170,14 +171,15 @@ public static class FileHelper
                 {
                     throw new Exception("Fail to get latest launcher version.");
                 }
-                window.StartButtonDev.Content = "Dev 런처 업데이트";
+                window.StartButton.Visibility = Visibility.Hidden;
+                window.StartButtonDev.Content = "런처 업데이트";
                 await DevDownloadAsset(window, DownloadType.Launcher);
                 return;
             }
         
             if (!File.Exists(window.DevGameVersionPath) || !File.Exists(window.DevGamePath))
             {
-                window.StartButtonDev.Content = "Dev 게임 설치";
+                window.StartButtonDev.Content = "개발 빌드 설치";
                 await DevDownloadAsset(window, DownloadType.Game);
                 return;
             }
@@ -190,7 +192,7 @@ public static class FileHelper
                 {
                     throw new Exception("Fail to get latest game version.");
                 }
-                window.StartButtonDev.Content = "Dev 게임 업데이트";
+                window.StartButtonDev.Content = "개발 빌드 업데이트";
                 await DevDownloadAsset(window, DownloadType.Game);
                 return;
             }
@@ -201,7 +203,7 @@ public static class FileHelper
             throw;
         }
 
-        window.StartButtonDev.Content = "Dev 게임 실행";
+        window.StartButtonDev.Content = "개발 빌드 실행";
         window.RunProcess(window.DevGamePath, window.Hide, () =>
         {
             window.Show();

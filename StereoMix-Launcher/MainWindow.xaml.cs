@@ -13,37 +13,33 @@ public partial class MainWindow : Window
     public string InstallDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMix");
     public string GamePath => Path.Combine(InstallDirectory, "StereoMix.exe");
     public string GameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json");
-    
+
     public string DevInstallDirectory => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StereoMixDev");
     public string DevGamePath => Path.Combine(DevInstallDirectory, "StereoMix.exe");
     public string DevGameVersionPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DevVersion.json");
-    
+
 #if DEBUG
-    public string BaseDownloadUrl => "http://localhost:15600/release/version/download";
-    public string LauncherDownloadUrl => "http://localhost:15600/dev/version/launcher/latest";
-    public string GameDownloadUrl => "http://localhost:15600/release/version/game/latest";
-    public string DevBaseDownloadUrl => "http://localhost:15600/dev/version/download";
-    public string DevLauncherDownloadUrl => "http://localhost:15600/dev/version/launcher/latest";
-    public string DevGameDownloadUrl => "http://localhost:15600/dev/version/game/latest";
+    private string BaseAPIUrl => "http://localhost:15600";
 #else
-    public string BaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/download";
-    public string LauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/launcher/latest";
-    public string GameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/release/version/game/latest";
-    public string DevBaseDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/download";
-    public string DevLauncherDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/launcher/latest";
-    public string DevGameDownloadUrl => "https://stereomix-502920527569.asia-northeast3.run.app/dev/version/game/latest";
+    private string BaseAPIUrl => "https://stereomix-502920527569.asia-northeast3.run.app";
 #endif
-    
+
+    public string BaseDownloadUrl => $"{BaseAPIUrl}/release/version/download";
+    public string LauncherDownloadUrl => $"{BaseAPIUrl}/dev/version/launcher/latest";
+    public string GameDownloadUrl => $"{BaseAPIUrl}/release/version/game/latest";
+    public string DevBaseDownloadUrl => $"{BaseAPIUrl}/dev/version/download";
+    public string DevLauncherDownloadUrl => $"{BaseAPIUrl}/dev/version/launcher/latest";
+    public string DevGameDownloadUrl => $"{BaseAPIUrl}/dev/version/game/latest";
+
     public string EventsUrl => "https://raw.githubusercontent.com/CK24-Surround/stereomix-launcher/main/StereoMix-Launcher/events/events.json";
     public string BaseRawUrl => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher";
-    public string RawBackgroundImage => "https://github.com/CK24-Surround/stereomix-launcher/blob/main/StereoMix-Launcher/resources/Background.png?raw=true";
 
     public MainWindow()
     {
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
         LauncherVersion.Text = FileHelper.GetLauncherVersion();
-        
+
         SetDownloadVisibility(Visibility.Hidden);
         DevSetDownloadVisibility(Visibility.Hidden);
 
@@ -51,29 +47,28 @@ public partial class MainWindow : Window
         EventHelper.CheckGameEvents(this);
         FileHelper.CheckGameInstallation(this);
         FileHelper.DevCheckGameInstallation(this);
-        ImageHelper.FetchBackgroundImage(this);
     }
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
         FileHelper.HandleStartButtonClick(this);
     }
-    
+
     private void DevStartButton_Click(object sender, RoutedEventArgs e)
     {
         FileHelper.DevHandleStartButtonClick(this);
     }
-    
+
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         DragMove();
     }
-    
+
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
         AnimateWindowHeight(0, () => WindowState = WindowState.Minimized);
     }
-    
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         AnimateWindowOpacity(0, Close);
@@ -86,7 +81,7 @@ public partial class MainWindow : Window
             AnimateWindowHeight(700);
         }
     }
-    
+
     private void AnimateWindowOpacity(double to, Action? onCompleted = null)
     {
         var storyboard = new Storyboard();
@@ -138,7 +133,7 @@ public partial class MainWindow : Window
         };
         EventBanner.BeginAnimation(OpacityProperty, fadeOutAnimation);
     }
-    
+
     private DateTime _lastUpdateTime;
     private long _lastBytesReceived;
     public void UpdateProgress(long bytesReceived, long totalBytes)
@@ -147,22 +142,22 @@ public partial class MainWindow : Window
         {
             var now = DateTime.Now;
             var timeSinceLastUpdate = now - _lastUpdateTime;
-            
+
             if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
             {
                 _lastUpdateTime = now;
                 _lastBytesReceived = bytesReceived;
             }
-            
+
             var bytesSinceLastUpdate = bytesReceived - _lastBytesReceived;
             var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
-            
+
             var progressPercentage = (double)bytesReceived / totalBytes * 100;
             DownloadProgressBar.Value = progressPercentage;
             DownloadProgressText.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
         }), DispatcherPriority.Background);
     }
-    
+
     private DateTime _devLastUpdateTime;
     private long _devLastBytesReceived;
     public void DevUpdateProgress(long bytesReceived, long totalBytes)
@@ -171,46 +166,46 @@ public partial class MainWindow : Window
         {
             var now = DateTime.Now;
             var timeSinceLastUpdate = now - _devLastUpdateTime;
-            
+
             if (timeSinceLastUpdate.TotalSeconds >= 0.2f)
             {
                 _devLastUpdateTime = now;
                 _devLastBytesReceived = bytesReceived;
             }
-            
+
             var bytesSinceLastUpdate = bytesReceived - _devLastBytesReceived;
             var downloadSpeed = (bytesSinceLastUpdate / 1024d / 1024d) / timeSinceLastUpdate.TotalSeconds;
-            
+
             var progressPercentage = (double)bytesReceived / totalBytes * 100;
             DownloadProgressBarDev.Value = progressPercentage;
             DownloadProgressTextDev.Text = $"{downloadSpeed:F2} MB/s ({progressPercentage:F1}%)";
         }), DispatcherPriority.Background);
     }
-    
+
     public void SetDownloadVisibility(Visibility visibility)
     {
         DownloadProgressBar.Visibility = visibility;
         DownloadProgressText.Visibility = visibility;
-        
+
         if (visibility == Visibility.Visible)
         {
             DownloadProgressBar.Value = 0;
             DownloadProgressText.Text = "0 MB/s (0%)";
         }
     }
-    
+
     public void DevSetDownloadVisibility(Visibility visibility)
     {
         DownloadProgressBarDev.Visibility = visibility;
         DownloadProgressTextDev.Visibility = visibility;
-        
+
         if (visibility == Visibility.Visible)
         {
             DownloadProgressBarDev.Value = 0;
             DownloadProgressTextDev.Text = "0 MB/s (0%)";
         }
     }
-    
+
     public void RunProcess(string path, Action? onCompleted = null, Action? onExited = null)
     {
         var process = new Process
@@ -222,14 +217,14 @@ public partial class MainWindow : Window
             },
             EnableRaisingEvents = true
         };
-        
+
         process.Exited += (_, _) =>
         {
             Application.Current.Dispatcher.Invoke(() => onExited?.Invoke());
         };
-        
+
         process.Start();
-        
+
         Application.Current.Dispatcher.Invoke(() => onCompleted?.Invoke());
     }
 }
