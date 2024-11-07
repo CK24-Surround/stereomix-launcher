@@ -23,6 +23,24 @@
         "Events": [{
             "Date": {
                 "Year": 2024,
+                "Month": 11,
+                "Day": 6
+            },
+            "Text": "11월 말 판교 네오위즈에서 만나요~!",
+            "Url": "https://x.com/StereomixGame/status/1854147865930830294"
+        },
+        {
+            "Date": {
+                "Year": 2024,
+                "Month": 10,
+                "Day": 19
+            },
+            "Text": "<Stereo-Mix!>가 2024 버닝비버에서 전시하게 되었습니다!!",
+            "Url": "https://x.com/StereomixGame/status/1847644925057548381"
+        },
+        {
+            "Date": {
+                "Year": 2024,
                 "Month": 8,
                 "Day": 16
             },
