@@ -266,6 +266,8 @@ public static class FileHelper
                 await HttpHelper.SaveToFile(window, response, fileStream);
             });
             
+            Directory.Delete(window.InstallDirectory, true);
+            
             ZipFile.ExtractToDirectory(tempFile, window.InstallDirectory, true);
             File.Delete(tempFile);
             
@@ -295,6 +297,8 @@ public static class FileHelper
                 await using var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);
                 await HttpHelper.DevSaveToFile(window, response, fileStream);
             });
+            
+            Directory.Delete(window.DevInstallDirectory, true);
             
             ZipFile.ExtractToDirectory(tempFile, window.DevInstallDirectory, true);
             File.Delete(tempFile);
