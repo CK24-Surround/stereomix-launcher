@@ -169,6 +169,8 @@ public static class FileHelper
                 await HttpHelper.SaveToFile(window, response, fileStream);
             });
             
+            Directory.Delete(window.InstallDirectory, true);
+            
             ZipFile.ExtractToDirectory(tempFile, window.InstallDirectory, true);
             File.Delete(tempFile);
             
