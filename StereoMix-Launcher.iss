@@ -1,5 +1,5 @@
 #define MyAppName "StereoMix Launcher Dev"
-#define MyAppVersion "24.1116.1"
+#define MyAppVersion "24.1119.1"
 #define MyAppPublisher "Surround"
 #define MyAppURL "https://discord.gg/bPCr4sy7QR"
 #define MyAppExeName "StereoMix-Launcher.exe"
